@@ -35,8 +35,8 @@ exports.handler = async function(event) {
 
     if (!row.hasOwnProperty(isP1 ? 'addr1' : 'addr2')) {
         try {
-            await layer.contract.methods.confirmBet(betId).send();
             await layer.confirmRow(betId, addr, isP1);
+            await layer.contract.methods.confirmBet(betId).send();
         } catch (e) {
             console.log(e);
         }
@@ -47,16 +47,15 @@ exports.handler = async function(event) {
     let rollCount = row.rollCount;
 
     try {
-        rollCount++;
         let isP1Turn = rollCount % 2 === isP1Begin ? 1 : 0;
         let result = await layer.getRoll(row.ceil);
         if (result === 0) {
-            await layer.contract.methods.completeBet(betId, !isP1Turn).send();
             await layer.completeRow(betId);
+            await layer.contract.methods.completeBet(betId, !isP1Turn).send();
             return;
         }
-        await layer.contract.methods.completeRoll(betId, result).send();
         await layer.updateRow(betId, result);
+        await layer.contract.methods.completeRoll(betId, result).send();
     } catch (e) {
         console.log(e);
     }

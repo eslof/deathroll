@@ -32,16 +32,17 @@ exports.init = async () => {
         let web3 = await new Web3(new Web3.providers.HttpProvider(url+projectId));
         exports.web3 = web3
 
-        let toBN = web3.utils.BN;
-        exports.toBN = toBN;
-        exports.BN = web3.utils.BN;
-        exports.BN_TWO = toBN(2);
-        exports.BN_TEN = toBN(10);
-        exports.BN_HUNDRED = toBN(100);
-        exports.BN_TEN_THOUSAND = toBN(10000);
-        exports.BN_BET_SANITY = toBN(256).pow(2).div(exports.BN_TEN);
+        let BN = web3.utils.BN;
+        exports.BN = BN;
+        let BN_TWO = new BN(2);
+        exports.BN_TWO = BN_TWO;
+        exports.BN_TEN = new BN(10);
+        exports.BN_HUNDRED = new BN(100);
+        exports.BN_TEN_THOUSAND = new BN(10000);
+        exports.BN_BET_SANITY = new BN(256).pow(BN_TWO).div(exports.BN_TEN);
         exports.BN_CEIL_MIN = exports.BN_HUNDRED;
         exports.BN_CEIL_MAX = exports.BN_TEN_THOUSAND;
+
 
 
         web3.eth.accounts.wallet.add(adminPrivateKey);
@@ -99,14 +100,41 @@ exports.initRow = async (betId, addr, isP1, ceil) => {
             ':zero': 0
         }
     }
+    await exports.dc.update(query).promise();
 };
 
 exports.confirmRow = async (betId, addr, isP1) => {
-
+    let query = {
+        TableName: exports.tableName,
+        Key: { id: betId },
+        UpdateExpression: 'SET #addr = :addr',
+        ExpressionAttributeNames: {
+            '#addr': isP1 ? 'addr1' : 'addr2'
+        },
+        ExpressionAttributeValues: {
+            ':addr': addr
+        }
+    }
+    await exports.dc.update(query).promise();
 };
 
 exports.updateRow = async (betId, result) => {
-
+    let query = {
+        TableName: exports.tableName,
+        Key: { id: betId },
+        UpdateExpression: 'SET #ceil = :ceil, #rollCount = #rollCount + 1',
+        ExpressionAttributeNames: {
+            '#addr': isP1 ? 'addr1' : 'addr2',
+            '#ceil': ceil,
+            '#rollCount': 'rollCount'
+        },
+        ExpressionAttributeValues: {
+            ':addr': addr,
+            ':ceil': ceil,
+            ':zero': 0
+        }
+    }
+    await exports.dc.update(query).promise();
 };
 
 exports.completeRow = async (betId) => {

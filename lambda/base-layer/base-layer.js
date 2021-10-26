@@ -13,7 +13,7 @@ exports.BN = null;
 let contractAddr = '';
 let adminAddr = '';
 let adminPrivateKey = '';
-let contractAbi = '';
+let contractAbi = JSON.parse('[{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"newAdmin","type":"address"}],"name":"AdminAdd","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"oldAdmin","type":"address"}],"name":"AdminRemove","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"oldOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnerSet","type":"event"},{"inputs":[{"internalType":"address","name":"addr","type":"address"}],"name":"addAdmin","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"getAdmins","outputs":[{"internalType":"address[]","name":"","type":"address[]"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getOwnerBalance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"isAdmin","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"ownerWithdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"addr","type":"address"}],"name":"removeAdmin","outputs":[],"stateMutability":"nonpayable","type":"function"}]');
 let gasPrice = '1';
 let gas = '2'; // limit
 
@@ -62,12 +62,33 @@ exports.getUser = async (address) => {
     return user;
 };
 
-exports.getRow = async (betId) => {
+exports.tableName = 'deathroll';
 
+exports.getRow = async (betId) => {
+    let query = {
+        TableName: exports.tableName,
+        Key: { id: betId },
+        ReturnValues: "ALL_NEW"
+    }
+    return (await exports.dc.update(query).promise()).Attributes;
 };
 
 exports.initRow = async (betId, addr, isP1, ceil) => {
-
+    let query = {
+        TableName: exports.tableName,
+        Key: { id: betId },
+        UpdateExpression: 'SET #addr = :addr, #ceil = :ceil, #rollCount = :zero',
+        ExpressionAttributeNames: {
+            '#addr': isP1 ? 'addr1' : 'addr2',
+            '#ceil': ceil,
+            '#rollCount': 'rollCount'
+        },
+        ExpressionAttributeValues: {
+            ':addr': addr,
+            ':ceil': ceil,
+            ':zero': 0
+        }
+    }
 };
 
 exports.confirmRow = async (betId, addr, isP1) => {

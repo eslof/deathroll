@@ -234,19 +234,3 @@ contract Deathroll is Admin, Config, Tax {
         userWinAndTax(winner, b.balance);
     }
 }
-
-/*struct Bet { // todo: what do we gain from packing?
-    uint timestamp;     //256
-
-    address p1;         //160
-    uint96 bet;         //96 = 256
-
-    bool isOffChain;    //8
-    uint40 ceil;        //40
-    bool isPending;     //8
-    bool isAddr1Begin;     //8
-    address p2;         //160 = 224 -32
-    
-    bytes32 password;   //256
-    uint rollCount;     //256
-}*/

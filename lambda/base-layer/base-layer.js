@@ -17,23 +17,34 @@ let contractAbi = '';
 let gasPrice = '1';
 let gas = '2'; // limit
 
-
+exports.BN_TWO = null;
+exports.BN_TEN = null;
+exports.BN_HUNDRED = null;
+exports.BN_TEN_THOUSAND = null;
+exports.BN_BET_SANITY = null;
 
 //        return (betMax, betMin, confirmTime, expireTime);
 exports.init = async () => {
     try {
         if (exports.config) return;
         exports.web3 = await new Web3(new Web3.providers.HttpProvider(url+projectId));
-        let toBN = exports.web3.utils.toBN;
+        //let toBN = exports.web3.utils.toBN;
+        exports.BN = exports.web3.utils.BN;
+        let BN = exports.BN;
+        exports.BN_TWO = new BN(2);
+        exports.BN_TEN = new BN(10);
+        exports.BN_HUNDRED = new BN(100);
+        exports.BN_TEN_THOUSAND = new BN(10000);
+        exports.BN_BET_SANITY= new BN(256).pow(2).div(exports.BN_TEN);
         exports.web3.eth.accounts.wallet.add(adminPrivateKey);
         exports.contract = new exports.web3.eth.Contract(JSON.parse(contractAbi), contractAddr, {
             from: adminAddr,
             gasPrice: gasPrice,
             gas: gas,
         });
-        let betMax, betMin, confirmTime, expireTime;
-        [betMax, betMin, confirmTime, expireTime] = await exports.contract.methods.getConfig().call();
-        exports.config = { betMax: toBN(betMax), betMin: toBN(betMin), confirmTime: toBN(confirmTime), expireTime: toBN(expireTime) };
+        let config = {};
+        [config.betMax, config.betMin, config.confirmTime, config.expireTime] = await exports.contract.methods.getConfig().call();
+        exports.config = config;
     } catch (e) {
         console.log(e);
     }
@@ -52,6 +63,22 @@ exports.getUser = async (address) => {
 };
 
 exports.getRow = async (betId) => {
+
+};
+
+exports.initRow = async (betId, addr, isP1, ceil) => {
+
+};
+
+exports.confirmRow = async (betId, addr, isP1) => {
+
+};
+
+exports.updateRow = async (betId, result) => {
+
+};
+
+exports.completeRow = async (betId) => {
 
 };
 

@@ -2,3 +2,7 @@ contracts/artifacts
 scripts/
 tests/
 .deps/
+node_modules/
+lambda/node_modules/
+client/.idea/
+lambda/.idea/

@@ -1,0 +1,245 @@
+<html>
+<head>
+<style>
+    body {background-color: #141414; color: white; font-family: 'Bangers', cursive; font-size: 22px; margin: 0; }
+    .logo { display:inline-block; font-size: 72px; text-align: center; }
+    button { padding: 3px 6px 3px 6px; font-size: 22px; font-family: 'Bangers', cursive; text-shadow: 2px 2px #000000; color: white; background-color: dimgrey; }
+    p { font-size: 32px; margin: 6px 0 6px 0; text-shadow: 2px 2px #000000; }
+    form { margin: 0 0 16px 0; }
+    input { height: 28px; text-align: right; }
+    button:disabled,
+    button[disabled]{
+        opacity: 66%;
+        color: lightgrey;
+    }
+    button.tmp-ui {
+        border-color: lightgreen;
+        background-color: limegreen;
+    }
+    button.tmp-ui:disabled,
+    button.tmp-ui[disabled]{
+        border-color: dimgray;
+        background-color: darkgray;
+    }
+</style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js/dist/web3.min.js"></script>
+    <script>
+        let BN = null;
+        let rolls = [];
+        let elRollParent = null;
+        let elStateText = null;
+        let elCreateBetButton = null;
+        let elCreateBetAmount = null;
+        //let elCreateBetPassword = null
+        let elJoinBetButton = null;
+        let elJoinBetId = null;
+        //let elJoinBetPassword = null;
+        let elActivateButton = null;
+        let elAddressText = null;
+        let elPlayerRollButton = null;
+        let elOpponentRollButton = null;
+
+        let roll = 100;
+        let isYourTurn = false;
+        let contractAddr = '';
+        let contractABI = {};
+
+        let contract = null;
+        let bet = null;
+        let user = null;
+
+        let gasPrice = '0';
+        let gas = '0';
+        let polygonMumbaiChainId = 80001;
+        let polygonMainnetChainId = 137;
+
+        let currentChainId = null;
+        let currentAccount = null;
+        let playingAccount = null;
+        let playingChain = null;
+
+        function updateRollTextOpacity() {
+            for (let i = 0; i < rolls.length; i++) {
+                rolls[i].styles.opacity = `${100-(i*10)}%`;
+            }
+        }
+
+        async function init() {
+            if (!window.ethereum) return;
+
+            elRollParent = document.getElementById('roll-text-div');
+            elStateText = document.getElementById('state-text');
+            elCreateBetButton = document.getElementById('create-bet-button');
+            elCreateBetAmount = document.getElementById('create-bet-amount');
+            elJoinBetButton = document.getElementById('join-bet-button');
+            elActivateButton = document.getElementById('activate-button');
+            elAddressText = document.getElementById('address-text');
+            elPlayerRollButton = document.getElementById('player-roll-button');
+            elOpponentRollButton = document.getElementById('opponent-roll-button');
+            elJoinBetId = document.getElementById('join-bet-id');
+            //elJoinBetPassword = document.getElementById('join-bet-password');
+
+            let web3 = new Web3(window.ethereum);
+            while (!currentAccount || !currentChainId || currentChainId !== polygonMumbaiChainId) {
+                try {
+                    currentAccount = (await web3.eth.requestAccounts())[0];
+                    currentChainId = await web3.eth.getChainId();
+                    if (currentChainId !== polygonMumbaiChainId) await ethereum.request({ method: 'wallet_switchEthereumChain', params:[{chainId: web3.utils.numberToHex(polygonMumbaiChainId)}]});
+                    elAddressText.innerText = currentAccount;
+                } catch (e) {
+                    //user canceled or doesn't have metamask/web3
+                }
+            }
+
+            BN = web3.utils.BN;
+
+            updateActivateButton();
+
+            window.ethereum.on('accountsChanged', function (accounts) {
+                currentAccount = accounts[0];
+                elAddressText.innerText = currentAccount;
+                console.log('accountsChanges',accounts);
+            });
+
+            window.ethereum.on('chainChanged', function(chainId){
+                console.log('chainChanged',chainId);
+                currentChainId = web3.utils.hexToNumber(chainId);
+                updateActivateButton();
+            });
+
+            elActivateButton.addEventListener('click', () => {
+                elJoinBetButton.disabled = elCreateBetButton.disabled = elPlayerRollButton.disabled = elOpponentRollButton.disabled = false;
+                playingAccount = currentAccount;
+                elActivateButton.disabled = true;
+                contract = new web3.eth.Contract(contractABI, contractAddr, {
+                    from: playingAccount,
+                    gasPrice: gasPrice,
+                    gas: gas,
+                });
+            });
+
+            elCreateBetButton.addEventListener('click', async () => {
+                elCreateBetButton.disabled = elJoinBetButton.disabled = true;
+                let amount = elCreateBetAmount.value;
+                let value = Math.floor(Number(amount));
+                if (value === Infinity || String(value) !== amount || value <= 0) {
+                    elCreateBetButton.disabled = false;
+                    return;
+                }
+                let betId;
+                try {
+                    let user = {};
+                    [user.balance, user.betId, user.fromBlock, user.toBlock] = await contract.methods.getUser().call();
+                    let betValue = new BN(web3.utils.toWei('0.1', 'ether'));
+                    if (user.balance.gte(betValue)) contrat.methods.createBet(betValue, web3.fromAscii("")).send();
+                    else contract.methods.createBet().send({ value: betValue.sub(user.balance) }, web3.fromAscii(""));
+                    // TODO: get betid from emitted event, elJoinBetId.value = betId;
+                } catch (e) {
+                    elCreateBetButton.disabled = elJoinBetButton.disabled = false;
+                    console.log(e);
+                }
+            });
+
+            elJoinBetButton.addEventListener('click', async () => {
+                elCreateBetButton.disabled = elJoinBetButton.disabled = true;
+                let user = { balance: 0, betId: 0, fromBlock: 0, toBlock: 0 };
+                [user.balance, user.betId, user.fromBlock, user.toBlock] = await contract.methods.getUser().call();
+                let betIdInput = elJoinBetId.value;
+                let betId = Math.floor(Number(betIdInput));
+                if (betId === Infinity || String(betId) !== betIdInput || betId <= 0) {
+                    elCreateBetButton.disabled = elJoinBetButton.disabled = false;
+                    return;
+                }
+
+
+                let betValue = new BN(web3.utils.toWei('0.1', 'ether'));
+                if (user.balance.gte(betValue)) betId = contrat.methods.createBet(betValue, web3.fromAscii("")).send();
+                else betId = contract.methods.createBet().send({ value: betValue.toString() });
+            });
+        }
+
+
+
+        function updateActivateButton() {
+            let isActive = currentChainId === polygonMumbaiChainId;
+            let isPlaying = playingAccount !== null;
+            if (!isActive || isPlaying && currentAccount === playingAccount) elActivateButton.disabled = elJoinButton.disabled = elCreateBetButton.disabled = elPlayerRollButton.disabled = elOpponentRollButton.disabled = true;
+            else elActivateButton.disabled = false;
+        }
+
+        function handleRollComplete(result) {
+            let p = document.createElement('p');
+            let txt = document.createTextNode(`${isYourTurn ? 'You' : 'They'} roll ${result} (0-${roll})`);
+            p.style.color = isYourTurn ? '#6991de' : '#c722b8';
+            p.appendChild(txt);
+            rolls.push(p);
+        }
+
+        function handleRoll() {
+
+        }
+
+        function go() {
+            if (location.pathname !== '/') if (tryParsePath(location.pathname)) return;
+            if (location.search !== '?' || location.search !== '') tryParseSearch(location.search);
+        }
+
+        function tryParseSearch(search) {
+            let params = search.substring(1).split('-');
+            if (1 > params.length > 2 || params[0] === '') return false;
+            let betId = Math.floor(Number(params[0]));
+            if (betId === Infinity || String(betId) !== params[0] || betId <= 0) return false;
+            elJoinBetId.value = params[0];
+            //if (params.length < 2 || params[1] === '' || !params[1].match("^[A-Za-z0-9]+$")) return false;
+            //elJoinBetPassword.value = params[1];
+            return true;
+        }
+
+        function tryParsePath(path) {
+            let params = document.location.search.charAt(0) === '/' ? path.substring(1).split('-') : path.split('-');
+            if (params.length < 1 || params[0] === '') return false;
+            let match = Math.floor(Number(params[0]));
+            if (match === Infinity || String(match) !== params[0] || match < 1) return false;
+            elJoinBetId.value = params[0];
+            //if (params.length < 2 || params[1] === '' || !params[1].match("^[A-Za-z0-9]+$")) return false;
+            //elJoinBetPassword.value = params[1];
+            return true;
+        }
+
+        window.onload = async (e) => {
+            console.log("hello");
+            await init();
+            go();
+        }
+
+    </script>
+</head>
+<body>
+<div style="height: 100%; width: 1080px; margin:0 auto; display: flex; flex-direction: column; flex-wrap: wrap; background-image: url('img/bg.png'); background-position: bottom;">
+    <div class="logo" style="margin-top: 16px;"><img src="img/logo.png"/></div>
+    <div id="roll-text-div" style="display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; flex-basis: 20px; flex-shrink: 1; flex-grow: 1; width: 100%; text-align: center; margin: 0px 0px 16px 0px;">
+        <p style="width: 100%; opacity: 50%; color: #6991de;">You roll 69 (0-100)</p>
+        <p style="width: 100%; opacity: 60%; color: #c722b8;">They roll 55 (0-69)</p>
+        <p style="width: 100%; opacity: 70%; color: #6991de;">You roll 13 (0-55)</p>
+        <p style="width: 100%; opacity: 80%; color: #c722b8;">They roll 1 (0-13)</p>
+        <p style="width: 100%; opacity: 90%; color: #6991de;">You roll 1 (0-1)</p>
+        <p style="width: 100%; opacity: 100%; color: #c722b8;">They roll 0 (0-1)</p>
+    </div>
+    <div style="margin: 16px 0px 16px 0px;"><p id="state-text" style="width: 100%; text-align: center; margin: 0px;">Your turn!</p></div>
+    <div style="margin: 16px 0 16px 0; display: flex; justify-content: center;">
+        <button id="player-roll-button" style="padding: 6px 12px 6px 12px; background-color: #6991de; border-color: lightblue; color: white; width: 112px; margin-right: 16px;" disabled>Roll 0-100</button><button id="opponent-roll-button" style="margin-left: 16px; padding: 6px 12px 6px 12px; background-color: #c722b8; border-color: pink; width: 112px;" disabled>Roll 0-1</button>
+    </div>
+    <div style="display: flex; justify-content: center;">
+        <button class="tmp-ui" id="create-bet-button" type="submit" style="width: 68px;" disabled>create</button><label
+            for="amount"> bet:</label><input id="create-bet-amount" type="number" min="0.1" step="0.1"
+            onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode === 44 || event.charCode === 46" style="width: 342px;"></div>
+    <div style="display: flex; justify-content: center;"><button class="tmp-ui" id="join-bet-button"  type="submit" style="width: 68px;" disabled>join</button><label
+            for="join-bet-id"> id:</label><input id="join-bet-id" onkeypress="return event.charCode >= 48 && event.charCode <= 57" style="width: 352px;"></div>
+    <button class="tmp-ui" id="activate-button" style="margin: 16px auto 16px auto; width: 120px;" disabled>activate</button>
+    <p id="address-text" style="margin: 0; font-family: 'Times New Roman', Times, serif; font-size: 22px; text-align: center;">0x0</p>
+</div>
+</body>
+</html>

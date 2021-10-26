@@ -139,6 +139,7 @@
                 let value = Math.floor(Number(amount));
                 if (value === Infinity || String(value) !== amount || value <= 0) {
                     elCreateBetButton.disabled = elJoinBetButton.disabled = false;
+                    elStateText.innerHTML = "Invalid bet value";
                     return;
                 }
 
@@ -164,8 +165,11 @@
                 } catch (e) {
                     playingAccount = contract = null;
                     elCreateBetButton.disabled = elJoinBetButton.disabled = false;
+                    elStateText.innerHTML = "Failed to create bet";
                     console.log(e);
                 }
+
+                elStateText.innerHTML = "Bet created";
             });
 
 
@@ -180,20 +184,15 @@
                         gas: gas,
                     });
                     [user.balance, user.betId, user.fromBlock, user.toBlock] = await contract.methods.getUser().call();
-                } catch (e) {
-                    elCreateBetButton.disabled = elJoinBetButton.disabled = false;
-                    console.log(e);
-                    return;
-                }
 
-                let betIdInput = elJoinBetId.value;
-                let betId = Math.floor(Number(betIdInput)); //making sure it's a number and sane
-                if (betId === Infinity || String(betId) !== betIdInput || betId <= 0) {
-                    elCreateBetButton.disabled = elJoinBetButton.disabled = false;
-                    return;
-                }
+                    let betIdInput = elJoinBetId.value;
+                    let betId = Math.floor(Number(betIdInput)); //making sure it's a number and sane
+                    if (betId === Infinity || String(betId) !== betIdInput || betId <= 0) {
+                        elStateText.innerHTML = "Invalid Bet ID";
+                        elCreateBetButton.disabled = elJoinBetButton.disabled = false;
+                        return;
+                    }
 
-                try {
                     let bet = {};
                     [bet.isAddr1Begin, bet.isConfirmed, bet.addr1, bet.addr2, bet.balance, bet.timestamp, bet.password] = await contract.methods.getBet(betId).call();
                     let receipt;
@@ -201,9 +200,11 @@
                     else receipt = await contract.methods.joinBet(betId, web3.fromAscii("")).send({value: betValue.toString()});
                     eventSubscription = contract.events.allEvents({ fromBlock: receipt.blockNumber, filter: { betId: betId } }, handleEvent);
                 } catch (e) {
+                    elStateText.innerHTML = "Failed to join bet";
                     elCreateBetButton.disabled = elJoinBetButton.disabled = false;
                     console.log(e);
                 }
+                elStateText.innerHTML = "Bet joined";
             });
 
             elPlayerRollButton.addEventListener('click', async () => {
@@ -228,13 +229,14 @@
             let ceil;
             switch (e.event) {
                 case 'BetCanceled':
+                    elStateText.innerHTML = "Bet canceled";
                     currentBet = playingAccount = contract = null;
                     await eventSubscription.unsubscribe();
                     break;
                 case 'BetJoined':
                     currentBet = {};
                     [bet.isAddr1Begin, bet.isConfirmed, bet.addr1, bet.addr2, bet.balance, bet.timestamp, bet.password] = await contract.methods.getBet(betId).call();
-
+                    elStateText.innerHTML = "Waiting for opponent";
                     isAddr1 = bet.addr1 === playingAccount;
                     //todo: check in with lambda + show ui waiting for confirmed
                     break;
@@ -249,6 +251,7 @@
                     elOpponentRollButton.innerHTML = isMyTurn ? 'Waiting' : `Roll 0-${ceil}`;
                     elPlayerRollButton.disabled = !isMyTurn;
 
+                    elStateText.innerHTML = isMyTurn ? "Your turn" : "";
                     //todo:
                     break;
                     //1 % 2 = 1
@@ -261,6 +264,7 @@
                     elOpponentRollButton.innerHTML = isMyTurn ? 'Waiting' : `Roll 0-${result}`;
                     elPlayerRollButton.disabled = !isMyTurn;
 
+                    elStateText.innerHTML = isMyTurn ? "Your turn" : "";
                     let p = document.createElement('p');
                     let txt = document.createTextNode(`${!isMyTurn ? 'You' : 'They'} roll ${result} (0-${currentCeil})`);
                     p.style.color = !isMyTurn ? '#6991de' : '#c722b8';

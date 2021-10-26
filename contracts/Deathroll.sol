@@ -21,6 +21,7 @@ struct Bet {
     bytes32 password;
 }
 
+// todo: cache any storage reference
 contract Deathroll is Admin, Config, Tax {
 
     string private constant ERROR_BET_MISSING = "Bet not found";
@@ -31,7 +32,7 @@ contract Deathroll is Admin, Config, Tax {
     string private constant ERROR_BET_CONFIRMED = "Bet already confirmed";
     
     //bet canceled event? refactor so user betid stays and instead we check betById[id].isOngoing or isComplete (depending on default vs set)
-    event BetCreated(address indexed addr, bool indexed isOpen, uint betId, uint betValue);
+    event BetCreated(bool indexed isOpen, uint betId, uint betValue);
     event BetCanceled(uint indexed betId);
     event BetJoined(uint indexed betId);
     event BetConfirmed(uint indexed betId, bool isAddr1Begin);
@@ -118,7 +119,7 @@ contract Deathroll is Admin, Config, Tax {
         else addUserBalance(msg.value - amount);
         betById[betId] = Bet(false, true, msg.sender, address(0), amount, block.timestamp, pwdHash);
         userByAddress[msg.sender].fromBlock = block.number;
-        emit BetCreated(msg.sender, pwdHash == "", betId, amount);
+        emit BetCreated(pwdHash == "", betId, amount);
     }
     
     // Join bet
@@ -220,15 +221,15 @@ contract Deathroll is Admin, Config, Tax {
     
     // Bet Complete  (admin)
 
-    function completeBet(uint betId, bool isP1Winner) external onlyAdmin {
+    function completeBet(uint betId, bool isAddr1Winner) external onlyAdmin {
         requireBetProgress(betId, true);
-        doCompleteBet(betId, isP1Winner);
+        doCompleteBet(betId, isAddr1Winner);
     }
     
-    function doCompleteBet(uint betId, bool isP1Winner) private {
+    function doCompleteBet(uint betId, bool isAddr1Winner) private {
         Bet memory b = betById[betId];
-        address winner = isP1Winner ? b.addr1 : b.addr2;
-        emit BetComplete(betId, winner, !isP1Winner ? b.addr1 : b.addr2, b.balance / 2);
+        address winner = isAddr1Winner ? b.addr1 : b.addr2;
+        emit BetComplete(betId, winner, !isAddr1Winner ? b.addr1 : b.addr2, b.balance / 2);
         userByAddress[b.addr1].toBlock = userByAddress[b.addr2].toBlock = block.number;
         delete betById[betId];
         userWinAndTax(winner, b.balance);

@@ -22,28 +22,38 @@ exports.BN_TEN = null;
 exports.BN_HUNDRED = null;
 exports.BN_TEN_THOUSAND = null;
 exports.BN_BET_SANITY = null;
+exports.BN_CEIL_MIN = null;
+exports.BN_CEIL_MAX = null;
 
 //        return (betMax, betMin, confirmTime, expireTime);
 exports.init = async () => {
     try {
         if (exports.config) return;
-        exports.web3 = await new Web3(new Web3.providers.HttpProvider(url+projectId));
-        //let toBN = exports.web3.utils.toBN;
-        exports.BN = exports.web3.utils.BN;
-        let BN = exports.BN;
-        exports.BN_TWO = new BN(2);
-        exports.BN_TEN = new BN(10);
-        exports.BN_HUNDRED = new BN(100);
-        exports.BN_TEN_THOUSAND = new BN(10000);
-        exports.BN_BET_SANITY= new BN(256).pow(2).div(exports.BN_TEN);
-        exports.web3.eth.accounts.wallet.add(adminPrivateKey);
-        exports.contract = new exports.web3.eth.Contract(JSON.parse(contractAbi), contractAddr, {
+        let web3 = await new Web3(new Web3.providers.HttpProvider(url+projectId));
+        exports.web3 = web3
+
+        let toBN = web3.utils.BN;
+        exports.toBN = toBN;
+        exports.BN = web3.utils.BN;
+        exports.BN_TWO = toBN(2);
+        exports.BN_TEN = toBN(10);
+        exports.BN_HUNDRED = toBN(100);
+        exports.BN_TEN_THOUSAND = toBN(10000);
+        exports.BN_BET_SANITY = toBN(256).pow(2).div(exports.BN_TEN);
+        exports.BN_CEIL_MIN = exports.BN_HUNDRED;
+        exports.BN_CEIL_MAX = exports.BN_TEN_THOUSAND;
+
+
+        web3.eth.accounts.wallet.add(adminPrivateKey);
+        let contract = new web3.eth.Contract(JSON.parse(contractAbi), contractAddr, {
             from: adminAddr,
             gasPrice: gasPrice,
             gas: gas,
         });
+        exports.contract = contract;
+
         let config = {};
-        [config.betMax, config.betMin, config.confirmTime, config.expireTime] = await exports.contract.methods.getConfig().call();
+        [config.betMax, config.betMin, config.confirmTime, config.expireTime] = await contract.methods.getConfig().call();
         exports.config = config;
     } catch (e) {
         console.log(e);
@@ -103,12 +113,18 @@ exports.completeRow = async (betId) => {
 
 };
 
+exports.LOG_TWO = Math.log(2);
+
 let getBytes = async (ceil) => {
-    let bytes = Math.ceil(Math.log(ceil+1) / Math.log(2));
+    // TODO: BN.js doesn't have ceil, figure it out; but it should be safe, only necessary for checking against bet amount
+    let byteCount = Math.max(64, Math.ceil(Math.log(Number(ceil)+1) / exports.LOG_TWO));
+
     let params = {
-        NumberOfBytes: bytes
+        NumberOfBytes: byteCount
     };
-    return await new Promise((resolve, reject) => {
+    return await exports.kms.generateRandom(params).promise();
+
+    /*return await new Promise((resolve, reject) => {
         exports.kms.generateRandom(params, function(err, data) {
             if (err) {
                 console.log('Error occurred: ' + err, err.stack);
@@ -118,7 +134,7 @@ let getBytes = async (ceil) => {
                 resolve(data);
             }
         });
-    });
+    });*/
 };
 
 exports.getRoll = async (ceil) => {

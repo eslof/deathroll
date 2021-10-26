@@ -4,6 +4,7 @@ console.log("hi");
 
 exports.handler = async function(event) {
     await layer.init();
+    let toBN = layer.toBN;
     let BN = layer.BN;
     // until authorizer in place we raw dog it
     let addr = event.addr;
@@ -26,9 +27,9 @@ exports.handler = async function(event) {
 
     // todo: separate function for confirm and roll
     if (!row.hasOwnProperty('ceil')) { //row not initialized
-        let betAmount = bet.addr2 === emptyAddr ? bet.balance : bet.balance.div(layer.BN_TWO);
-        let ceil = betAmount.gte(layer.BN_BET_SANITY) ? layer.BN_TEN_THOUSAND : BN.max(layer.BN_HUNDRED, BN.min(betAmount.mul(layer.BN_TEN), layer.BN_TEN_THOUSAND));
-        await layer.initRow(betId, addr, isP1, ceil);
+        let betAmount = toBN(layer.web3.utils.fromWei(bet.addr2 === emptyAddr ? bet.balance : bet.balance.div(layer.BN_TWO)));
+        let ceil = betAmount.gte(layer.BN_BET_SANITY) ? layer.BN_CEIL_MAX : BN.max(layer.BN_CEIL_MIN, BN.min(betAmount.mul(layer.BN_TEN), layer.BN_CEIL_MAX));
+        await layer.initRow(betId, addr, isP1, ceil.toString());
         return;
     }
 
@@ -48,7 +49,7 @@ exports.handler = async function(event) {
     try {
         rollCount++;
         let isP1Turn = rollCount % 2 === isP1Begin ? 1 : 0;
-        let result = await layer.getRoll();
+        let result = await layer.getRoll(row.ceil);
         if (result === 0) {
             await layer.contract.methods.completeBet(betId, !isP1Turn).send();
             await layer.completeRow(betId);
@@ -56,11 +57,7 @@ exports.handler = async function(event) {
         }
         await layer.contract.methods.completeRoll(betId, result).send();
         await layer.updateRow(betId, result);
+    } catch (e) {
+        console.log(e);
     }
-
-
-    //let bet = layer.getBet(betId);
-    //let timestamp = Math.floor(Date.now() / 1000);
-    //if (bet.timestamp > timestamp + layer.config.expireTime) return;
-
 }

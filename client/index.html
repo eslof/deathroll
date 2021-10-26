@@ -77,7 +77,7 @@
         let BN_CEIL_MIN = null;
         let BN_CEIL_MAX = null;
 
-        async function init() {
+        let init = async () => {
             if (!window.ethereum) return;
 
             elRollParent = document.getElementById('roll-text-div');
@@ -211,7 +211,7 @@
             });
         }
 
-        function updateRollTextOpacity() {
+        let updateRollTextOpacity = () => {
             for (let i = 0; i < rolls.length; i++) {
                 rolls[i].styles.opacity = `${100-(i*10)}%`;
             }

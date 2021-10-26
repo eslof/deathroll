@@ -1,242 +1,252 @@
 // SPDX-License-Identifier: CC BY
 pragma solidity ^0.8.7;
-import "@chainlink/contracts/src/v0.8/VRFConsumerBase.sol";
 import "./Admin.sol";
+import "./Config.sol";
+import "./Tax.sol";
 
-contract Deathroll is Admin, VRFConsumerBase {
-    
-    bytes32 internal keyHashVRF;
-    uint internal linkFeeVRF;
-    
-    constructor() VRFConsumerBase(0x3d2341ADb2D31f1c5530cDC622016af293177AE0,
-            0xb0897686c545045aFc77CF20eC7A532E3120E0F1) {
-        keyHashVRF = 0xf86195cf7690c55907b2b611ebb7343a6f649bff128701cc542f0569e2c549da;
-        linkFeeVRF = 0.0001 * 10**18; //link fee for VRF rng request
-    }
-    
-    // Events
-    
-    event MatchOpen(uint indexed bet,  bool indexed isOffChain, uint indexed ceil, uint matchId); //
-    event MatchClosed(uint indexed matchId);
-    event MatchJoined(uint indexed matchId, bool isP1Begin);
-    event RollComplete(uint indexed matchId, uint result);
-    event MatchComplete(uint indexed matchId, Result result);
+struct User {
+    uint balance;
+    uint betId;
+    uint fromBlock;
+    uint toBlock;
+}
 
-    // Structs
+struct Bet {
+    bool isAddr1Begin;
+    bool isConfirmed;
+    address addr1;
+    address addr2;
+    uint balance;
+    uint timestamp;
+    bytes32 password;
+}
 
-    struct Match { // todo: considering the usage of this struct; is it worth packing like this? what do we gain from limiting bets to a mere 40 billion
-        uint timestamp;     //256
+contract Deathroll is Admin, Config, Tax {
 
-        address p1;         //160
-        uint96 bet;         //96 = 256
-
-        bool isOffChain;    //8
-        bytes32 password;   //32
-        uint40 ceil;        //40
-        bool isPending;     //8
-        bool isP1Begin;     //8
-        address p2;         //160 = 256
-        
-        uint rollCount;     //256
-    }
+    string private constant ERROR_BET_MISSING = "Bet not found";
+    string private constant ERROR_BET_ONGOING = "Bet ongoing";
+    string private constant ERROR_BET_PENDING = "Bet awaiting participant";
+    string private constant ERROR_BET_TAKEN = "Bet taken";
+    string private constant ERROR_BET_PASSWORD = "Bet password mismatch";
+    string private constant ERROR_BET_CONFIRMED = "Bet already confirmed";
     
-    struct Result {
-        address winner;
-        address loser;
-        uint96 bet;
-    }
+    //bet canceled event? refactor so user betid stays and instead we check betById[id].isOngoing or isComplete (depending on default vs set)
+    event BetCreated(address indexed addr, bool indexed isOpen, uint betId, uint betValue);
+    event BetCanceled(uint indexed betId);
+    event BetJoined(uint indexed betId);
+    event BetConfirmed(uint indexed betId, bool isAddr1Begin);
+    event RollComplete(uint indexed betId, uint rollResult);
+    event BetComplete(uint indexed betId, address indexed winner, address indexed loser, uint betValue);
+    
+    mapping(uint => Bet) private betById;
+    uint private betCount = 0;
 
-    struct User {
-        uint balance;
-        uint matchId;
-        uint blockNumber; //last relevant block number to get match results event fromBlock for other-concluded match while not connected (timeout or leave before hit 0)
-    }
+    mapping(address => User) private userByAddress;
+    uint private totalUserBalance;
     
-    // Public
+    // User
     
-    mapping(address => User) public userByAddress;
-    mapping(uint => Match) public matchById;
-
-    // Private
-
-    mapping(bytes32 => uint) private matchIdByRngRequest;
-    uint private matchCount = 0;
-    uint private totalUserBalance = 0;
-    
-    //do we need to track totalUserBalance?
-    
-    // Generic
-    function addUserBalance(address addr, uint value) internal {
+    function addUserBalance(address addr, uint value) private onlyAdmin {
         userByAddress[addr].balance += value;
         totalUserBalance += value;
     }
     
-    function subtractUserBalance(address addr, uint value) internal {
-        userByAddress[addr].balance -= value;
+    function addUserBalance(uint value) private { addUserBalance(msg.sender, value); }
+    
+    function subtractUserBalance(uint value) private {
+        userByAddress[msg.sender].balance -= value;
         totalUserBalance -= value;
     }
     
-    // Withdraw
-    
-    function withdraw(uint amount) external {
-        require(userByAddress[msg.sender].balance >= amount, "Insufficient balance");
-        doWithdraw(amount);
+    function userWinAndTax(address addr, uint bet) private {
+        uint tax = getTax(bet);
+        addOwnerBalance(tax);
+        addUserBalance(addr, bet-tax);
     }
     
-    function doWithdraw(uint amount) internal {
-        subtractUserBalance(msg.sender, amount);
+    function withdraw(uint amount) public {
+        require(userByAddress[msg.sender].balance >= amount, ERROR_BALANCE);
+        subtractUserBalance(amount);
         (bool success, ) = msg.sender.call{value: amount}("");
         require(success, "Failed to withdraw");
     }
     
-    receive() external payable {
-        if (isOwner()) {
-            addOwnerBalance(msg.value);
-        } else {
-            addUserBalance(msg.sender, msg.value);
-        }
+    function withdraw() external { withdraw(userByAddress[msg.sender].balance); }
+    
+    // Generic
+    
+    receive() external payable { addUserBalance(msg.value); }
+    
+    function getBet() external view returns (Bet memory) { return betById[userByAddress[msg.sender].betId]; }
+    
+    function getBet(uint betId) external view returns (Bet memory) { return betById[betId]; }
+    
+    function getUser() external view returns (User memory) { return userByAddress[msg.sender]; }
+    
+    function getUser(address addr) external view onlyAdmin returns (User memory) { return userByAddress[addr]; }
+    
+    function getContractBalance() external view onlyOwner returns (uint) {
+        return address(this).balance - totalUserBalance - getOwnerBalance(); }
+    
+    function coinFlip() private view returns (bool) { return block.number % 2 == 0; }
+    
+    // Requirements
+    
+    function isBetOngoing() private view returns (bool) {
+        return userByAddress[msg.sender].fromBlock > userByAddress[msg.sender].toBlock; }
+    
+    function isExpired(uint betId) private view returns (bool) {
+        return block.timestamp >= betById[betId].timestamp + getExpireTime(); 
     }
     
-    // Model
+    // Create bet
+
+    function createBet(uint amount, bytes32 pwdHash) external payable {
+        requireCreateBet(amount);
+        doCreateBet(amount, pwdHash);
+    }
     
-    function roll() external returns (bool) {
-        rollRequire(userByAddress[msg.sender].matchId);
-        uint matchId = userByAddress[msg.sender].matchId;
-        
-        // Allowed to force opponent roll IF no activity after config().cooldown seconds
-        bool isP1Turn = matchById[matchId].isP1Begin && matchById[matchId].rollCount % 2 == 0;
-        require(isP1Turn && msg.sender == matchById[matchId].p1 
-            || block.timestamp >= matchById[matchId].timestamp + config().cooldown, "Force roll cooldown not yet expired");
-            
-        // Forced coin-flip end if no activity after config().timeout seconds OR out of LINK tokens
-        if (LINK.balanceOf(address(this)) < linkFeeVRF || block.timestamp >= matchById[matchId].timestamp + config().timeout) 
-        { doCompleteMatch(matchId, block.number % 2 == 0); return false; } // Timeout
-        
-        matchById[matchId].isPending = true;
-        matchById[matchId].rollCount++; // rollCount and isP1Begin tells us who'se turn it is
-        matchIdByRngRequest[requestRandomness(keyHashVRF, linkFeeVRF)] = matchId;
+    function requireCreateBet(uint amount) private view {
+        require(!isBetOngoing(), ERROR_BET_ONGOING);
+        require(userByAddress[msg.sender].balance + msg.value >= amount, ERROR_BALANCE);
+        requireBetLimit(amount);
+    }
+    
+    function doCreateBet(uint amount, bytes32 pwdHash) private {
+        uint betId = ++betCount;
+        if (msg.value < amount) subtractUserBalance(amount - msg.value);
+        else addUserBalance(msg.value - amount);
+        betById[betId] = Bet(false, true, msg.sender, address(0), amount, block.timestamp, pwdHash);
+        userByAddress[msg.sender].fromBlock = block.number;
+        emit BetCreated(msg.sender, pwdHash == "", betId, amount);
+    }
+    
+    // Join bet
+    
+    function joinBet(uint betId, bytes32 password) external payable returns (bool) {
+        requireJoinBet(betId, msg.value + userByAddress[msg.sender].balance, password);
+        doJoinBet(betId);
         return true;
     }
     
-    function rollRequire(uint matchId) internal view {
-        require(!matchById[matchId].isOffChain, "Cannot roll on-chain for off-chain match"); //maybe handle timeout here for off chain in case amazon goes down
-        require(userByAddress[msg.sender].matchId != 0, "No match in progress");
-        require(matchById[matchId].p2 != address(0), "Waiting for second participant");
-        require(matchById[matchId].ceil != 0, "Match already concluded");
-        require(matchById[matchId].isPending == false, "Roll already isPending");
+    //admin can test password without having to call more than getBet
+    function requireJoinBet(uint betId, uint senderValueBalance, bytes32 password) private view {
+        require(senderValueBalance >= betById[betId].balance, ERROR_BALANCE);
+        require(betById[betId].addr1 != address(0), ERROR_BET_MISSING);
+        require(betById[betId].addr2 == address(0), ERROR_BET_TAKEN);
+        require(!isExpired(betById[betId].timestamp), ERROR_BET_EXPIRED);
+        require(betById[betId].password == "" && password == "" || keccak256(abi.encode(password)) == betById[betId].password, ERROR_BET_PASSWORD); //we can verify the password before we join
+        if (!isAdmin()) require(!isBetOngoing(), ERROR_BET_ONGOING); // admin can play multiple bets
     }
     
-    function fulfillRandomness(bytes32 requestId, uint256 randomness) internal override {
-        // Callback function used by VRF Coordinator
-        uint matchId = matchIdByRngRequest[requestId];
-        matchIdByRngRequest[requestId] = 0;
-        uint result = randomness % (matchById[matchId].ceil + 1);
-        
-        if (result == 0) return doCompleteMatch(matchId, 
-            matchById[matchId].isP1Begin && matchById[matchId].rollCount % 2 == 0);
-        
-        matchById[matchId].ceil = uint40(result);
-        matchById[matchId].timestamp = block.timestamp;
-        matchById[matchId].isPending = false;
-        emit RollComplete(matchId, result);
+    function doJoinBet(uint betId) private {
+        uint amount = betById[betId].balance;
+        betById[betId].addr2 = msg.sender;
+        betById[betId].balance += amount;
+        if (msg.value < amount) subtractUserBalance(amount - msg.value);
+        else addUserBalance(msg.value - amount);
+        betById[betId].timestamp = block.timestamp;
+        userByAddress[msg.sender].fromBlock = block.number;
+        emit BetJoined(betId);
     }
     
-    // Complete and Tax
-    
-    //change timeout to expire, 1 hour and do not refresh; if match is taking too long give option to resolve
-    function resolveMatch() external {
-        require(userByAddress[msg.sender].matchId != 0, "No match in progress");
-        uint matchId = userByAddress[msg.sender].matchId;
-        if (matchById[matchId].isOffChain) require(!isOnline(), "Off-chain service is online"); 
-        else { //timeout
-            bool isTimeout = block.timestamp >= matchById[matchId].timestamp + config().timeout;
-            bool isOutOfLink = LINK.balanceOf(address(this)) < linkFeeVRF;
-            require(isTimeout || isOutOfLink, "Resolve condition failed");
-        }
-        doCompleteMatch(matchId, block.number % 2 == 0);
-    }
-    
-    function completeMatch(uint matchId, bool isP1Winner) external onlyOwner {
-        require(matchById[matchId].isOffChain, "Owner cannot decide on-chain match");
-        doCompleteMatch(matchId, isP1Winner);
-    }
+    // Resolve expired bet
 
-    function doCompleteMatch(uint matchId, bool isP1Winner) internal {
-        Match memory m = matchById[matchId];
-        uint tax = getTax(m.bet / 2, m.isOffChain); // bet / 2 = winnings
-        addOwnerBalance(tax);
-        addUserBalance(isP1Winner ? m.p1 : m.p2, m.bet - tax);
-        userByAddress[m.p1].blockNumber = userByAddress[m.p2].blockNumber = block.number;
-        emit MatchComplete(matchId, Result(isP1Winner ? m.p1 : m.p2, !isP1Winner ? m.p1 : m.p2, m.bet));
-        delete matchById[matchId];
+    function resolveBet() external {
+        require(isBetOngoing(), ERROR_BET_MISSING);
+        uint betId = userByAddress[msg.sender].betId;
+        requireBetProgress(betId, true);
+        require(isExpired(betById[betId].timestamp), ERROR_BET_NOT_EXPIRED);
+        doCompleteBet(betId, coinFlip());
     }
     
-    // Create
+    // Cancel bet (user and admin)
     
-    // to create an open match simply set password to "", if no money is sent to payable it will use balance
-    function createMatch(bool isOffChain, uint ceil, uint bet, bytes32 password) external payable returns (uint) {
-        createMatchRequire(isOffChain, ceil, bet);
-        return doCreateMatch(isOffChain, ceil, bet, password);
+    function cancelBet(uint betId) external onlyAdmin { // so that we can cancel on your behalf aka don't have to sign
+        doCancelBet(betId);
     }
     
-    function createMatchRequire(bool isOffChain, uint ceil, uint bet) internal view {
-        if (isOffChain) require(isOnline(), "Off-chain service offline"); 
-        else require(LINK.balanceOf(address(this)) >= linkFeeVRF, "Not enough LINK on contract");
-        require(userByAddress[msg.sender].matchId == 0, "Match already in progress");
-        require(msg.value + userByAddress[msg.sender].balance >= bet, "Insufficient funds");
-        require(ceil > 0 && ceil <= config().ceilMax, "Ceil out of bounds");
-        require(bet >= config().betMin && bet <= config().betMax, "Bet out of bounds");
+    function cancelBet() external { // but if our service is down this and resolveBet will ensure you're able to get your funds regardless of off-chain status
+        require(isBetOngoing(), ERROR_BET_MISSING);
+        doCancelBet(userByAddress[msg.sender].betId);
     }
     
-    function doCreateMatch(bool isOffChain, uint ceil, uint bet, bytes32 password) internal returns (uint) {
-        subtractUserBalance(msg.sender, bet - msg.value);
-        uint matchId = userByAddress[msg.sender].matchId = ++matchCount; //increment match count ++before assignment to avoid 0
-        matchById[matchId] = Match(block.timestamp, msg.sender, uint96(bet), isOffChain, password, uint40(ceil), false, false, address(0), 0);
-        if (password == "") emit MatchOpen(bet, isOffChain, ceil, matchId);
-        return matchId;
+    function doCancelBet(uint betId) private {
+        if (betById[betId].addr2 == address(0)) doCancelEmptyBet(betId);
+        else doCancelUncomfirmedBet(betId);
     }
     
-    // Join
-    
-    function joinMatch(uint matchId, string calldata password) external payable {
-        joinMatchRequire(matchId, password);
-        doJoinMatch(matchId);
+    function doCancelEmptyBet(uint betId) private {
+        address addr1 = betById[betId].addr1;
+        uint betBalance = betById[betId].balance;
+        userByAddress[addr1].toBlock = block.number;
+        delete betById[betId];
+        addUserBalance(addr1, betBalance);
     }
     
-    // todo: with every call if off-chain and not isonline then cancel or coin-flip match end with any call
-    function joinMatchRequire(uint matchId, string calldata password) internal view {
-        require(userByAddress[msg.sender].matchId == 0, "Match already in progress");
-        require(matchById[matchId].p1 != address(0), "No such bet exists");
-        require(matchById[matchId].p2 == address(0), "Match already taken");
-        require(msg.value + userByAddress[msg.sender].balance >= matchById[matchId].bet, "Insufficient balance");
-        if (matchById[matchId].isOffChain) require(isOnline(), "Off-chain service offline"); 
-        else require(LINK.balanceOf(address(this)) >= linkFeeVRF, "Not enough LINK on contract");
-        if (matchById[matchId].password != "") require(keccak256(abi.encode(matchId, password)) == matchById[matchId].password, "Incorrect password");
+    function doCancelUncomfirmedBet(uint betId) private {
+        require(!betById[betId].isConfirmed, "Bet already confirmed");
+        require(block.timestamp >= betById[betId].timestamp + getConfirmTime(), "Confirm not expired");
+        emit BetCanceled(betId);
+        address addr1 = betById[betId].addr1; address addr2 = betById[betId].addr2;
+        uint betBalance = betById[betId].balance;
+        userByAddress[addr1].toBlock = userByAddress[addr2].toBlock = block.number;
+        delete betById[betId];
+        addUserBalance(addr1, betBalance / 2); addUserBalance(addr2, betBalance / 2);
     }
     
-    function doJoinMatch(uint matchId) internal {
-        userByAddress[msg.sender].balance -= matchById[matchId].bet - msg.value;
-        subtractUserBalance(msg.sender, matchById[matchId].bet - msg.value);
-        matchById[matchId].p2 = msg.sender;
-        userByAddress[msg.sender].matchId = matchId;
-        matchById[matchId].bet += matchById[matchId].bet;
-        matchById[matchId].timestamp = block.timestamp;
-        matchById[matchId].isP1Begin = block.number % 2 == 1;
-        userByAddress[matchById[matchId].p1].blockNumber = block.number;
-        emit MatchJoined(matchId, matchById[matchId].isP1Begin);
+    // Roll complete (admin)
+    
+    function requireBetProgress(uint betId, bool isConfirmedExpected) private view {
+        require(betById[betId].addr1 != address(0), ERROR_BET_MISSING);
+        require(betById[betId].addr2 != address(0), ERROR_BET_PENDING);
+        if (isConfirmedExpected) require(betById[betId].isConfirmed, "Bet not confirmed");
+        else require(!betById[betId].isConfirmed, "Bet already confirmed");
+    }
+    
+    function completeRoll(uint betId, uint rollResult) external onlyAdmin {
+        requireBetProgress(betId, true);
+        emit RollComplete(betId, rollResult);
+    }
+    
+    // Bet confirm (admin)
+    
+    function confirmBet(uint betId) external onlyAdmin {
+        requireBetProgress(betId, false);
+        betById[betId].isAddr1Begin = coinFlip();
+        betById[betId].isConfirmed = false;
+        emit BetConfirmed(betId, betById[betId].isAddr1Begin);
+    }
+    
+    // Bet Complete  (admin)
 
+    function completeBet(uint betId, bool isP1Winner) external onlyAdmin {
+        requireBetProgress(betId, true);
+        doCompleteBet(betId, isP1Winner);
     }
     
-    // Cancel
-    
-    function cancelMatch() external {
-        require(userByAddress[msg.sender].matchId != 0, "No bet in progress");
-        uint matchId = userByAddress[msg.sender].matchId;
-        require(matchById[matchId].p2 == address(0), "Cannot cancel on-going bet");
-        userByAddress[msg.sender].matchId = 0;
-        if (matchById[matchId].password == "") emit MatchClosed(matchId);
-        uint bet = matchById[matchId].bet;
-        delete matchById[matchId];
-        userByAddress[msg.sender].balance += bet;
+    function doCompleteBet(uint betId, bool isP1Winner) private {
+        Bet memory b = betById[betId];
+        address winner = isP1Winner ? b.addr1 : b.addr2;
+        emit BetComplete(betId, winner, !isP1Winner ? b.addr1 : b.addr2, b.balance / 2);
+        userByAddress[b.addr1].toBlock = userByAddress[b.addr2].toBlock = block.number;
+        delete betById[betId];
+        userWinAndTax(winner, b.balance);
     }
 }
+
+/*struct Bet { // todo: what do we gain from packing?
+    uint timestamp;     //256
+
+    address p1;         //160
+    uint96 bet;         //96 = 256
+
+    bool isOffChain;    //8
+    uint40 ceil;        //40
+    bool isPending;     //8
+    bool isAddr1Begin;     //8
+    address p2;         //160 = 224 -32
+    
+    bytes32 password;   //256
+    uint rollCount;     //256
+}*/

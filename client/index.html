@@ -273,8 +273,8 @@
                     break;
                 case 'BetComplete':
                     rollCount++;
-                    isMyTurn = isAddr1 && rollCount % 2 === isAddr1Begin ? 1 : 0;
-                    elStateText.innerHTML = isMyTurn ? "You lose" : "You win!";
+                    isMyTurn = isAddr1 && rollCount % 2 === isAddr1Begin ? 0 : 1;
+                    elStateText.innerHTML = !isMyTurn ? "You lose" : "You win!";
                     currentBet = playingAccount = contract = null;
                     await eventSubscription.unsubscribe();
                     break;

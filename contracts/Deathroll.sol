@@ -31,7 +31,9 @@ contract Deathroll is Admin, Config, Tax {
     string private constant ERROR_BET_PASSWORD = "Bet password mismatch";
     string private constant ERROR_BET_CONFIRMED = "Bet already confirmed";
     
+    // todo: revert back to betopen instead of betcreated, and have function to "set open" 
     //bet canceled event? refactor so user betid stays and instead we check betById[id].isOngoing or isComplete (depending on default vs set)
+    // todo: figure out how to deal with starting a match with password, closing browser, opening on your device, we can't get your password to show you invite link
     event BetCreated(bool indexed isOpen, uint betId, uint betValue);
     event BetCanceled(uint indexed betId);
     event BetJoined(uint indexed betId);
@@ -47,7 +49,7 @@ contract Deathroll is Admin, Config, Tax {
     
     // User
     
-    function addUserBalance(address addr, uint value) private onlyAdmin {
+    function addUserBalance(address addr, uint value) private {
         userByAddress[addr].balance += value;
         totalUserBalance += value;
     }
@@ -76,7 +78,7 @@ contract Deathroll is Admin, Config, Tax {
     
     // Generic
     
-    receive() external payable { addUserBalance(msg.value); }
+    receive() external payable { }
     
     function getBet() external view returns (Bet memory) { return betById[userByAddress[msg.sender].betId]; }
     
@@ -86,8 +88,8 @@ contract Deathroll is Admin, Config, Tax {
     
     function getUser(address addr) external view onlyAdmin returns (User memory) { return userByAddress[addr]; }
     
-    function getContractBalance() external view onlyOwner returns (uint) {
-        return address(this).balance - totalUserBalance - getOwnerBalance(); }
+    function getContractBalance() external view onlyOwner returns (int) {
+        return int(address(this).balance) - int(totalUserBalance) - int(getOwnerBalance()); }
     
     function coinFlip() private view returns (bool) { return block.number % 2 == 0; }
     
@@ -101,6 +103,21 @@ contract Deathroll is Admin, Config, Tax {
     }
     
     // Create bet
+    
+    function createBet() external payable {
+        requireCreateBet(msg.value);
+        doCreateBet(msg.value, "");
+    }
+    
+    function createBet(bytes32 pwdHash) external payable {
+        requireCreateBet(msg.value);
+        doCreateBet(msg.value, pwdHash);
+    }
+
+    function createBet(uint amount) external payable {
+        requireCreateBet(amount);
+        doCreateBet(amount, "");
+    }
 
     function createBet(uint amount, bytes32 pwdHash) external payable {
         requireCreateBet(amount);
@@ -118,8 +135,9 @@ contract Deathroll is Admin, Config, Tax {
         if (msg.value < amount) subtractUserBalance(amount - msg.value);
         else addUserBalance(msg.value - amount);
         betById[betId] = Bet(false, true, msg.sender, address(0), amount, block.timestamp, pwdHash);
+        userByAddress[msg.sender].betId = betId;
         userByAddress[msg.sender].fromBlock = block.number;
-        emit BetCreated(pwdHash == "", betId, amount);
+        emit BetCreated(pwdHash == "", betId, amount); //put this back as BetOpen only if password is "", we get betid ourselves by getuser on receipt
     }
     
     // Join bet
@@ -215,7 +233,7 @@ contract Deathroll is Admin, Config, Tax {
     function confirmBet(uint betId) external onlyAdmin {
         requireBetProgress(betId, false);
         betById[betId].isAddr1Begin = coinFlip();
-        betById[betId].isConfirmed = false;
+        betById[betId].isConfirmed = true;
         emit BetConfirmed(betId, betById[betId].isAddr1Begin);
     }
     

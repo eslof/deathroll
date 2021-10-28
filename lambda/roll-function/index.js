@@ -47,6 +47,7 @@ exports.handler = async function(event) {
     let rollCount = row.rollCount;
 
     try {
+        //todo: here's where we would put checks and balances on forcing roll off-turn
         let isP1Turn = rollCount % 2 === isP1Begin ? 1 : 0;
         let result = await layer.getRoll(row.ceil);
         if (result === 0) {

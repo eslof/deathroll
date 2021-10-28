@@ -104,8 +104,10 @@
                 }
             }
 
+            updateActivateButton();
+
             BN = web3.utils.BN;
-            toBN = web3.utils.BN;
+            toBN = web3.utils.toBN;
             BN_TWO = new BN(2);
             BN_TEN = new BN(10);
             BN_HUNDRED = new BN(100);
@@ -113,8 +115,6 @@
             BN_BET_SANITY = new BN(256).pow(BN_TWO).div(BN_TEN);
             BN_CEIL_MIN = BN_HUNDRED;
             BN_CEIL_MAX = BN_TEN_THOUSAND;
-
-            updateActivateButton();
 
             window.ethereum.on('accountsChanged', function (accounts) {
                 currentAccount = accounts[0];
@@ -155,10 +155,11 @@
                     [user.balance, user.betId, user.fromBlock, user.toBlock] = await contract.methods.getUser().call();
                     let betValue = new BN(web3.utils.toWei('0.1', 'ether'));
 
-                    let receipt;
+                    let receipt; //todo: see if we can use the signing here to auth with instead of a secondary
+                    // todo: .. web3.eth.signTransaction(transactionObject, address [, callback]) ->
                     if (user.balance.gte(betValue)) receipt = await contract.methods.createBet(betValue, web3.fromAscii("")).send();
                     else receipt = await contract.methods.createBet(betValue, web3.fromAscii("")).send({ value: betValue.sub(user.balance) });
-
+                    // todo: instead of using event to get betId we can make another call ot getUser after await contract...createBet
                     let betId = receipt.events.BetCreated.returnValues.betId;
                     let fromBlock = receipt.blockNumber;
                     eventSubscription = contract.events.allEvents({ fromBlock: fromBlock, filter: { betId: betId } }, handleEvent);
@@ -246,7 +247,8 @@
                     let betAmount = bet.balance.div(2);
                     currentCeil = betAmount.gte(BN_BET_SANITY) ? BN_CEIL_MAX : BN.max(BN_CEIL_MIN, BN.min(betAmount.mul(BN_TEN), BN_CEIL_MAX));
 
-                    isAddr1Begin = e.returnValues.isAddr1Begin;
+                    isAddr1Begin = e.returnValues.isAddr1Begin; // note that this bool is possibly changed after BetJoined
+                    // todo: possibly we can rely purely on events for isAddr1Begin instead of passing it around here
                     isMyTurn = isAddr1Begin && isAddr1;
                     elPlayerRollButton.innerHTML = isMyTurn ? `Roll 0-${ceil}` : 'Waiting';
                     elOpponentRollButton.innerHTML = isMyTurn ? 'Waiting' : `Roll 0-${ceil}`;
@@ -275,6 +277,7 @@
                     updateRollTextOpacity();
 
                     currentCeil = result;
+
                     break;
                 case 'BetComplete':
                     rollCount++;

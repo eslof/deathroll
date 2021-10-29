@@ -327,7 +327,7 @@
         //for handling invite links
         let parseLink = () => {
             if (location.pathname !== '/') if (tryParsePath(location.pathname)) return;
-            if (location.search !== '?' || location.search !== '') tryParseSearch(location.search);
+            if (location.search !== '?' || location.search !== '') tryParseSearch(location.search); //todo: search more widely supported by CDN
         }
 
         let tryParseSearch = (search) => {
@@ -337,7 +337,7 @@
             if (betId === Infinity || String(betId) !== params[0] || betId <= 0) return false;
             elJoinBetId.value = params[0];
             //if (params.length < 2 || params[1] === '' || !params[1].match("^[A-Za-z0-9]+$")) return false;
-            //elJoinBetPassword.value = params[1];
+            //elJoinBetPassword.value = params[1]; todo: we need to figure out a good way to generate match invite links aka passwords
             return true;
         }
 

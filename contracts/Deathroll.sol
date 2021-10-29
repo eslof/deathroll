@@ -143,7 +143,7 @@ contract Deathroll is Admin, Config, Tax {
         uint betId = ++betCount;
         if (value < amount) subtractUserBalance(amount - value);
         else addUserBalance(value - amount);
-        betById[betId] = Bet(false, true, msg.sender, address(0), amount, block.timestamp, pwdHash);
+        betById[betId] = Bet(false, msg.sender, address(0), amount, block.timestamp, pwdHash);
         userByAddress[msg.sender].betId = betId;
         userByAddress[msg.sender].fromBlock = block.number;
         emit BetCreated(pwdHash == "", betId, amount); //put this back as BetOpen only if password is "", we get betid ourselves by getuser on receipt

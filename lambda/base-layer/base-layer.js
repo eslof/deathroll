@@ -9,7 +9,7 @@ exports.dc = new AWS.DynamoDB.DocumentClient();
 exports.kms = new AWS.KMS();
 let web3 = new Web3(new Web3.providers.HttpProvider(url+projectId));
 exports.web3 = web3;
-let BN = web3.utils.BN;
+let BN = web3.utils.BN; //toBN // todo: figure out what's right here
 exports.BN = BN;
 let BN_TWO = new BN(2);
 exports.BN_TWO = BN_TWO;
@@ -58,14 +58,20 @@ exports.init = async () => {
 };
 
 exports.getBet = async (betId) => {
-    let bet = {};
-    [bet.isAddr1Begin, bet.isConfirmed, bet.addr1, bet.addr2, bet.balance, bet.timestamp, bet.password] = await exports.contract.methods.getBet(betId).call();
-    return bet;
+    let data = await contract.methods.getBet().call();
+    return {
+        isConfirmed: data[0],
+        addr1: data[1],
+        addr2: data[2],
+        balance: new BN(data[3]),
+        timestamp: new BN(data[4]),
+        password: data[5]
+    };
 };
 
 exports.getUser = async (address) => {
     let user = {};
-    [user.balance, user.betId, user.fromBlock, user.toBlock] = await exports.contract.methods.getUser(address).call();
+    [user.balance, user.betId, user.fromBlock, user.toBlock] = (await contract.methods.getUser().call()).map(item => new BN(item));
     return user;
 };
 

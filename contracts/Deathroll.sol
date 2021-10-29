@@ -105,35 +105,45 @@ contract Deathroll is Admin, Config, Tax {
     // Create bet
     
     function createBet() external payable {
-        requireCreateBet(msg.value);
-        doCreateBet(msg.value, "");
+        requireCreateBet(msg.value, msg.value);
+        doCreateBet(msg.value, msg.value, "");
     }
     
     function createBet(bytes32 pwdHash) external payable {
-        requireCreateBet(msg.value);
-        doCreateBet(msg.value, pwdHash);
+        requireCreateBet(msg.value, msg.value);
+        doCreateBet(msg.value, msg.value, pwdHash);
     }
 
     function createBet(uint amount) external payable {
-        requireCreateBet(amount);
-        doCreateBet(amount, "");
+        requireCreateBet(msg.value, amount);
+        doCreateBet(msg.value, amount, "");
     }
 
     function createBet(uint amount, bytes32 pwdHash) external payable {
-        requireCreateBet(amount);
-        doCreateBet(amount, pwdHash);
+        requireCreateBet(msg.value, amount);
+        doCreateBet(msg.value, amount, pwdHash);
+    }
+
+    function createBetBalance(uint amount) external {
+        requireCreateBet(0, amount);
+        doCreateBet(0, amount, "");
     }
     
-    function requireCreateBet(uint amount) private view {
+    function createBetBalance(uint amount, bytes32 pwdHash) external {
+        requireCreateBet(0, amount);
+        doCreateBet(0, amount, pwdHash);
+    }
+    
+    function requireCreateBet(uint value, uint amount) private view {
         require(!isBetOngoing(), ERROR_BET_ONGOING);
-        require(userByAddress[msg.sender].balance + msg.value >= amount, ERROR_BALANCE);
+        require(userByAddress[msg.sender].balance + value >= amount, ERROR_BALANCE);
         requireBetLimit(amount);
     }
     
-    function doCreateBet(uint amount, bytes32 pwdHash) private {
+    function doCreateBet(uint value, uint amount, bytes32 pwdHash) private {
         uint betId = ++betCount;
-        if (msg.value < amount) subtractUserBalance(amount - msg.value);
-        else addUserBalance(msg.value - amount);
+        if (value < amount) subtractUserBalance(amount - value);
+        else addUserBalance(value - amount);
         betById[betId] = Bet(false, true, msg.sender, address(0), amount, block.timestamp, pwdHash);
         userByAddress[msg.sender].betId = betId;
         userByAddress[msg.sender].fromBlock = block.number;

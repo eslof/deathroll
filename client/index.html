@@ -114,6 +114,18 @@
             BN_CEIL_MIN = BN_HUNDRED;
             BN_CEIL_MAX = BN_TEN_THOUSAND;
 
+            try {
+                //todo: we do something like this to handle reconnect
+                let user = await getUser();
+                // here we're getting caught up to date
+                if (user.fromBlock.gt(user.toBlock)) {
+                    let events = await getPastEvents(user.betId, user.fromBlock, user.toBlock);
+                    events.map(handleEvent);
+                }
+            } catch (e) {
+                // we probably switched chain without connecting the right acocunt
+            }
+
             window.ethereum.on('accountsChanged', function (accounts) {
                 currentAccount = accounts[0];
                 elAddressText.innerText = currentAccount;
@@ -187,7 +199,7 @@
                         gas: gas,
                     });
 
-                    user = getUser();
+                    user = await getUser();
 
                     if (user.fromBlock.gt(user.toBlock)) return; // todo: already in a match, init with user.betId
 
@@ -219,10 +231,29 @@
             });
         }
 
+        let getPastEvents = async (betId, fromBlock, toBlock, batchLimit) => {
+            let events = [];
+            let blockTarget = Math.min(toBlock, fromBlock + batchLimit);
+            while (fromBlock < blockTarget) {
+                Array.prototype.push.apply(events, (
+                    await contract.getPastEvents('allEvents',
+                       { fromBlock: fromBlock, toBlock: blockTarget, filter: { betId: betId } })
+                    )
+                );
+                fromBlock = blockTarget + 1;
+                blockTarget = Math.min(toBlock, blockTarget + batchLimit);
+            }
+            return events;
+        };
+
         let getUser = async () => {
-            let user = {};
-            [user.balance, user.betId, user.fromBlock, user.toBlock] = (await contract.methods.getUser().call()).map(item => new BN(item));
-            return user;
+            let data = await contract.methods.getUser().call();
+            return {
+                balance: new BN(data[0]),
+                betId: data[0],
+                fromBlock: new BN(data[0]),
+                toBlock: new BN(data[0]),
+            };
         }
 
         let getBet = async () => {
@@ -266,7 +297,7 @@
                     break;
                 case 'BetConfirmed':
                     rollCount = 0;
-                    let bet = getBet();
+                    let bet = await getBet();
                     let betAmount = bet.balance.div(2);
                     currentCeil = betAmount.gte(BN_BET_SANITY) ? BN_CEIL_MAX : BN.max(BN_CEIL_MIN, BN.min(betAmount.mul(BN_TEN), BN_CEIL_MAX));
                     isAddr1Begin = e.returnValues.isAddr1Begin;

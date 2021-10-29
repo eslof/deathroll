@@ -67,7 +67,9 @@ exports.handler = async function(event) {
 
         let result = await layer.getRoll(row.ceil);
         if (result === 0) {
-            await layer.contract.methods.completeBet(betId, !isAddr1Turn).send();
+            await new Promise(resolve => { // todo: test this
+                layer.contract.methods.completeBet(betId, !isAddr1Turn).send().on('sent', resolve)
+            });
             await layer.deleteRow(betId);
             return;
         }

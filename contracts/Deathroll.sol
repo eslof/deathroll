@@ -12,7 +12,6 @@ struct User {
 }
 
 struct Bet {
-    bool isAddr1Begin;
     bool isConfirmed;
     address addr1;
     address addr2;
@@ -242,9 +241,8 @@ contract Deathroll is Admin, Config, Tax {
     
     function confirmBet(uint betId) external onlyAdmin {
         requireBetProgress(betId, false);
-        betById[betId].isAddr1Begin = coinFlip();
         betById[betId].isConfirmed = true;
-        emit BetConfirmed(betId, betById[betId].isAddr1Begin);
+        emit BetConfirmed(betId, coinFlip());
     }
     
     // Bet Complete  (admin)

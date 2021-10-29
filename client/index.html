@@ -28,7 +28,6 @@
     <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js/dist/web3.min.js"></script>
     <script>
         let BN = null;
-        let toBN = null;
         let rolls = [];
         let elRollParent = null;
         let elStateText = null;
@@ -107,7 +106,6 @@
             updateActivateButton();
 
             BN = web3.utils.BN;
-            toBN = web3.utils.toBN;
             BN_TWO = new BN(2);
             BN_TEN = new BN(10);
             BN_HUNDRED = new BN(100);
@@ -153,6 +151,8 @@
 
                     let user = {};
                     [user.balance, user.betId, user.fromBlock, user.toBlock] = await contract.methods.getUser().call();
+                    // todo: check if fromBlock > toBlock (meaning currently in a match)
+
                     let betValue = new BN(web3.utils.toWei('0.1', 'ether'));
 
                     let receipt; //todo: see if we can use the signing here to auth with instead of a secondary
@@ -160,8 +160,10 @@
                     if (user.balance.gte(betValue)) receipt = await contract.methods.createBet(betValue, web3.fromAscii("")).send();
                     else receipt = await contract.methods.createBet(betValue, web3.fromAscii("")).send({ value: betValue.sub(user.balance) });
                     // todo: instead of using event to get betId we can make another call ot getUser after await contract...createBet
-                    let betId = receipt.events.BetCreated.returnValues.betId;
-                    let fromBlock = receipt.blockNumber;
+                    //let betId = receipt.events.BetCreated.returnValues.betId;
+                    [user.balance, user.betId, user.fromBlock, user.toBlock] = await contract.methods.getUser().call();
+                    let betId = user.betId;
+                    let fromBlock = user.fromBlock;
                     eventSubscription = contract.events.allEvents({ fromBlock: fromBlock, filter: { betId: betId } }, handleEvent);
                 } catch (e) {
                     playingAccount = contract = null;
@@ -184,7 +186,10 @@
                         gasPrice: gasPrice,
                         gas: gas,
                     });
-                    [user.balance, user.betId, user.fromBlock, user.toBlock] = await contract.methods.getUser().call();
+
+                    user = getUser();
+
+                    if (user.fromBlock.gt(user.toBlock)) return; // todo: already in a match, init with user.betId
 
                     let betIdInput = elJoinBetId.value;
                     let betId = Math.floor(Number(betIdInput)); //making sure it's a number and sane
@@ -194,8 +199,8 @@
                         return;
                     }
 
-                    let bet = {};
-                    [bet.isAddr1Begin, bet.isConfirmed, bet.addr1, bet.addr2, bet.balance, bet.timestamp, bet.password] = await contract.methods.getBet(betId).call();
+                    // todo: check if the password is correct first
+                    // todo: check if now is > timestamp + contract.methods.getConfig's expire
                     let receipt;
                     if (user.balance.gte(betValue)) receipt = await contract.methods.joinBet(betId, web3.fromAscii("")).send();
                     else receipt = await contract.methods.joinBet(betId, web3.fromAscii("")).send({value: betValue.toString()});
@@ -210,8 +215,26 @@
 
             elPlayerRollButton.addEventListener('click', async () => {
                 elStateText.innerHTML = "Rolling... (to be continued)";
-                //todo: call lambda function
+                //todo: call lambda
             });
+        }
+
+        let getUser = async () => {
+            let user = {};
+            [user.balance, user.betId, user.fromBlock, user.toBlock] = (await contract.methods.getUser().call()).map(item => new BN(item));
+            return user;
+        }
+
+        let getBet = async () => {
+            let data = await contract.methods.getBet().call();
+            return {
+                isConfirmed: data[0],
+                addr1: data[1],
+                addr2: data[2],
+                balance: new BN(data[3]),
+                timestamp: new BN(data[4]),
+                password: data[5]
+            };
         }
 
         let updateRollTextOpacity = () => {
@@ -226,6 +249,8 @@
         event RollComplete(uint indexed betId, uint rollResult);
         event BetComplete(uint indexed betId, address indexed winner, address indexed loser, uint betValue);*/
 
+        let forceTurnTimeout;
+
         let handleEvent = async (e) => {
             let isMyTurn;
             let ceil;
@@ -236,33 +261,34 @@
                     await eventSubscription.unsubscribe();
                     break;
                 case 'BetJoined':
-                    currentBet = {};
-                    [bet.isAddr1Begin, bet.isConfirmed, bet.addr1, bet.addr2, bet.balance, bet.timestamp, bet.password] = await contract.methods.getBet(betId).call();
                     elStateText.innerHTML = "Waiting for opponent";
-                    isAddr1 = bet.addr1 === playingAccount;
                     //todo: check in with lambda + show ui waiting for confirmed
                     break;
                 case 'BetConfirmed':
                     rollCount = 0;
+                    let bet = getBet();
                     let betAmount = bet.balance.div(2);
                     currentCeil = betAmount.gte(BN_BET_SANITY) ? BN_CEIL_MAX : BN.max(BN_CEIL_MIN, BN.min(betAmount.mul(BN_TEN), BN_CEIL_MAX));
+                    isAddr1Begin = e.returnValues.isAddr1Begin;
 
-                    isAddr1Begin = e.returnValues.isAddr1Begin; // note that this bool is possibly changed after BetJoined
-                    // todo: possibly we can rely purely on events for isAddr1Begin instead of passing it around here
-                    isMyTurn = isAddr1Begin && isAddr1;
+                    isMyTurn = isAddr1 ? isAddr1Begin : !isAddr1Begin;
                     elPlayerRollButton.innerHTML = isMyTurn ? `Roll 0-${ceil}` : 'Waiting';
                     elOpponentRollButton.innerHTML = isMyTurn ? 'Waiting' : `Roll 0-${ceil}`;
                     elPlayerRollButton.disabled = !isMyTurn;
 
                     elStateText.innerHTML = isMyTurn ? "Your turn" : "";
-                    //todo:
+
+                    if (!isMyTurn) forceTurnTimeout = setTimeout(() => {}, 15000); //todo: call lambda
                     break;
                     //1 % 2 = 1
                     //2 % 2 = 0
                 case 'RollComplete':
+                    if (forceTurnTimeout && !forceTurnTimeout.cleared) clearTimeout(forceTurnTimeout);
+
                     rollCount++;
                     let result = e.returnValues.rollResult;
-                    isMyTurn = isAddr1 && rollCount % 2 === isAddr1Begin ? 0 : 1;
+                    let isAddr1Turn = rollCount % 2 === isAddr1Begin ? 0 : 1;
+                    isMyTurn = isAddr1 ? isAddr1Turn : !isAddr1Turn;
                     elPlayerRollButton.innerHTML = isMyTurn ? `Roll 0-${result}` : 'Waiting';
                     elOpponentRollButton.innerHTML = isMyTurn ? 'Waiting' : `Roll 0-${result}`;
                     elPlayerRollButton.disabled = !isMyTurn;
@@ -278,6 +304,7 @@
 
                     currentCeil = result;
 
+                    if (!isMyTurn) forceTurnTimeout = setTimeout(() => {}, 15000); //todo: call lambda
                     break;
                 case 'BetComplete':
                     rollCount++;

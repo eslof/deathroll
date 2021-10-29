@@ -34,11 +34,13 @@ exports.handler = async function(event) {
         return;
     }
 
+    let currentTimestamp = Math.floor(Date.now() / 1000);
+
     if (!row.hasOwnProperty(isAddr1 ? 'addr1' : 'addr2')) {
         try {
             let receipt = await layer.contract.methods.confirmBet(betId).send();
             let isAddr1Begin = receipt.events.BetConfirmed.returnValues.isAddr1Begin;
-            await layer.confirmRow(betId, addr, isAddr1, isAddr1Begin, Math.floor(Date.now() / 1000));
+            await layer.confirmRow(betId, addr, isAddr1, isAddr1Begin, currentTimestamp);
         } catch (e) {
             console.log(e);
         }
@@ -47,19 +49,23 @@ exports.handler = async function(event) {
 
     let isAddr1Begin = row.isAddr1Begin;
     let rollCount = row.rollCount;
-    let timestamp = row.timestamp;
+    let rowTimestamp = row.timestamp;
 
     try {
         //todo: here's where we would put checks and balances on forcing roll off-turn
-        let isAddr1Turn = rollCount % 2 === isAddr1Begin ? 1 : 0;
+        let isAddr1Turn = rollCount % 2 === isAddr1Begin ? 0 : 1;
+        let isMyTurn = isAddr1 ? isAddr1Turn : !isAddr1Turn;
+
+        if (!isMyTurn && currentTimestamp - rowTimestamp < 10) return;
+
         let result = await layer.getRoll(row.ceil);
         if (result === 0) {
-            await layer.completeRow(betId);
             await layer.contract.methods.completeBet(betId, !isAddr1Turn).send();
+            await layer.deleteRow(betId);
             return;
         }
+        await layer.contract.methods.completeRoll(betId, result, currentTimestamp).send();
         await layer.updateRow(betId, result);
-        await layer.contract.methods.completeRoll(betId, result, Math.floor(Date.now() / 1000)).send();
     } catch (e) {
         console.log(e);
     }

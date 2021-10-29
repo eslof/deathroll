@@ -12,6 +12,13 @@ exports.handler = async function(event) {
     let betId = user.betId;
     let bet = layer.getBet(betId);
 
+    // todo: lambda authorizer for this flow:
+    // 1. verify state; not in a match
+    // 2. generate one-time message to be included in create or join transaction signing
+    // 3. verify state; match is confirmed, match is ongoing, user is part of match et.c.
+    // 4. trade signed transaction including our message for jwt token with expire to fit match timestamp + config expire
+    // 5. forward appropriate data (event.addr, event.betId?)
+
     /* todo: separate function for resolve and cancel bet, and then deny here on expire
     let timestamp = Math.floor(Date.now() / 1000);
     if (bet.timestamp > timestamp + layer.config.expireTime) {

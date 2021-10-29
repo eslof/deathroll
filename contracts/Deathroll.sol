@@ -151,16 +151,30 @@ contract Deathroll is Admin, Config, Tax {
     
     // Join bet
     
-    function joinBet(uint betId, bytes32 password) external payable returns (bool) {
-        requireJoinBet(betId, msg.value + userByAddress[msg.sender].balance, password);
+    function joinBet(uint betId) external payable {
+        requireJoinBet(betId, msg.value, "");
         doJoinBet(betId);
-        return true;
+    }
+    
+    function joinBet(uint betId, bytes32 password) external payable {
+        requireJoinBet(betId, msg.value, password);
+        doJoinBet(betId);
+    }
+    
+    function joinBetBalance(uint betId) external {
+        requireJoinBet(betId, 0, "");
+        doJoinBet(betId);
+    }
+    
+    function joinBetBalance(uint betId, bytes32 password) external {
+        requireJoinBet(betId, 0, password);
+        doJoinBet(betId);
     }
     
     //admin can test password without having to call more than getBet
-    function requireJoinBet(uint betId, uint senderValueBalance, bytes32 password) private view {
-        require(senderValueBalance >= betById[betId].balance, ERROR_BALANCE);
-        require(betById[betId].addr1 != address(0), ERROR_BET_MISSING);
+    function requireJoinBet(uint betId, uint value, bytes32 password) private view {
+        require(betById[betId].addr1 != address(0) && betById[betId].balance > 0, ERROR_BET_MISSING);
+        require(userByAddress[msg.sender].balance + value >= betById[betId].balance, ERROR_BALANCE);
         require(betById[betId].addr2 == address(0), ERROR_BET_TAKEN);
         require(!isExpired(betById[betId].timestamp), ERROR_BET_EXPIRED);
         require(betById[betId].password == "" && password == "" || keccak256(abi.encode(password)) == betById[betId].password, ERROR_BET_PASSWORD); //we can verify the password before we join

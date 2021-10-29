@@ -116,6 +116,8 @@
 
             try {
                 //todo: we do something like this to handle reconnect
+                // this doesn't work because we don't have a contract yet so also:
+                // todo: set up contract instance in beforehand and set .defaultAccount 
                 let user = await getUser();
                 // here we're getting caught up to date
                 if (user.fromBlock.gt(user.toBlock)) {

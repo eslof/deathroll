@@ -38,18 +38,16 @@ let gasPrice = '1';
 let gas = '2'; // limit
 
 //        return (betMax, betMin, confirmTime, expireTime);
-exports.init = async () => {
-    try {
-        if (exports.config) return;
+exports.getConfig = async () => {
+    let data = await contract.methods.getConfig().call();
+    return {
+        betMax: new BN(data[0]),
+        betMin: new BN(data[1]),
+        confirmTime: new BN(data[2]),
+        expireTime: new BN(data[3]),
+    };
 
-
-        let config = {};
-        [config.betMax, config.betMin, config.confirmTime, config.expireTime] = await contract.methods.getConfig().call();
-        exports.config = config;
-    } catch (e) {
-        console.log(e);
-    }
-};
+}
 
 exports.getBet = async (betId) => {
     let data = await contract.methods.getBet(betId).call();
@@ -64,9 +62,13 @@ exports.getBet = async (betId) => {
 };
 
 exports.getUser = async (address) => {
-    let user = {};
-    [user.balance, user.betId, user.fromBlock, user.toBlock] = (await contract.methods.getUser(address).call()).map(item => new BN(item));
-    return user;
+    let data = await contract.methods.getUser(address).call();
+    return {
+        balance: new BN(data[0]),
+        betId: data[1],
+        fromBlock: new BN(data[2]),
+        toBlock: new BN(data[3]),
+    }
 };
 
 exports.tableName = 'deathroll';

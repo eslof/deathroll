@@ -3,7 +3,6 @@ const emptyAddr = '0x0000000000000000000000000000000000000000';
 console.log("hi");
 
 exports.handler = async function(event) {
-    await layer.init();
     let BN = layer.BN;
     // until authorizer in place we raw dog it
     let addr = event.addr;

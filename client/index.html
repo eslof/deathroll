@@ -67,6 +67,7 @@
         }
 
         let BN = web3.utils.BN;
+        let BN_ZERO = new BN(0);
         let BN_TWO = new BN(2);
         let BN_TEN = new BN(10);
         let BN_HUNDRED = new BN(100);
@@ -114,6 +115,7 @@
                     user = await getUser();
                     playingAccount = currentAccount;
                 } catch (e) {
+                    playingAccount = contract.defaultAccount = null;
                     elStateText.innerHTML = "Please connect your mumbai address";
                     //user canceled or doesn't have metamask/web3
                 }
@@ -153,7 +155,6 @@
             });
 
             elCreateBetButton.addEventListener('click', async () => {
-                elCreateBetButton.disabled = elJoinBetButton.disabled = true;
                 let amount = elCreateBetAmount.value;
                 let value = Math.floor(Number(amount));
                 if (value === Infinity || String(value) !== amount || value <= 0) {
@@ -162,13 +163,11 @@
                     return;
                 }
 
+                elCreateBetButton.disabled = elJoinBetButton.disabled = true;
+
                 try {
                     playingAccount = currentAccount;
-                    contract = new web3.eth.Contract(contractABI, contractAddr, {
-                        from: playingAccount,
-                        gasPrice: gasPrice,
-                        gas: gas,
-                    });
+                    contract.defaultAccount = playingAccount;
 
                     let user = {};
                     [user.balance, user.betId, user.fromBlock, user.toBlock] = await contract.methods.getUser().call();
@@ -187,9 +186,10 @@
                     let fromBlock = user.fromBlock;
                     eventSubscription = contract.events.allEvents({ fromBlock: fromBlock, filter: { betId: betId } }, handleEvent);
                 } catch (e) {
-                    playingAccount = contract = null;
+                    playingAccount = contract.defaultAccount = null;
                     elCreateBetButton.disabled = elJoinBetButton.disabled = false;
                     elStateText.innerHTML = "Failed to create bet";
+                    updateActivateButton();
                     console.log(e);
                 }
 
@@ -198,37 +198,38 @@
 
 
             elJoinBetButton.addEventListener('click', async () => {
+                let betIdInput = elJoinBetId.value;
+                let betId = Math.floor(Number(betIdInput)); //making sure it's a number and sane
+                if (betId === Infinity || String(betId) !== betIdInput || betId <= 0) {
+                    elStateText.innerHTML = "Invalid Bet ID";
+                    elCreateBetButton.disabled = elJoinBetButton.disabled = false;
+                    return;
+                }
+
                 elCreateBetButton.disabled = elJoinBetButton.disabled = true; //todo: fix ui
-                let user = {};
+
                 try {
                     playingAccount = currentAccount;
-                    contract = new web3.eth.Contract(contractABI, contractAddr, {
-                        from: playingAccount,
-                        gasPrice: gasPrice,
-                        gas: gas,
-                    });
+                    contract.defaultAccount = playingAccount;
 
-                    user = await getUser();
+                    let user = await getUser();
 
                     if (user.fromBlock.gt(user.toBlock)) return; // todo: already in a match, init with user.betId
 
-                    let betIdInput = elJoinBetId.value;
-                    let betId = Math.floor(Number(betIdInput)); //making sure it's a number and sane
-                    if (betId === Infinity || String(betId) !== betIdInput || betId <= 0) {
-                        elStateText.innerHTML = "Invalid Bet ID";
-                        elCreateBetButton.disabled = elJoinBetButton.disabled = false;
-                        return;
-                    }
-
+                    let bet = await getBet(betId);
                     // todo: check if the password is correct first
                     // todo: check if now is > timestamp + contract.methods.getConfig's expire
+                    let sendAmount = user.balance.gte(bet.balance) ? BN_ZERO : bet.balance.sub(user.balance);
                     let receipt;
-                    if (user.balance.gte(betValue)) receipt = await contract.methods.joinBet(betId, web3.fromAscii("")).send();
-                    else receipt = await contract.methods.joinBet(betId, web3.fromAscii("")).send({value: betValue.toString()});
+                    if (sendAmount.gt(BN_ZERO)) receipt = await contract.methods.joinBet(betId).send({value: sendAmount.toString()});
+                    else receipt = await contract.methods.joinBet(betId).send();
+
                     eventSubscription = contract.events.allEvents({ fromBlock: receipt.blockNumber, filter: { betId: betId } }, handleEvent);
                 } catch (e) {
-                    elStateText.innerHTML = "Failed to join bet";
                     elCreateBetButton.disabled = elJoinBetButton.disabled = false;
+                    playingAccount = contract.defaultAccount = null;
+                    elStateText.innerHTML = "Failed to join bet";
+                    updateActivateButton();
                     console.log(e);
                 }
                 elStateText.innerHTML = "Bet joined";

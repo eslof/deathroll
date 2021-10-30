@@ -51,8 +51,8 @@
         let contractABI = JSON.parse('[{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"newAdmin","type":"address"}],"name":"AdminAdd","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"oldAdmin","type":"address"}],"name":"AdminRemove","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"oldOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnerSet","type":"event"},{"inputs":[{"internalType":"address","name":"addr","type":"address"}],"name":"addAdmin","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"getAdmins","outputs":[{"internalType":"address[]","name":"","type":"address[]"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getOwnerBalance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"isAdmin","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"ownerWithdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"addr","type":"address"}],"name":"removeAdmin","outputs":[],"stateMutability":"nonpayable","type":"function"}]');
 
         let contract = null;
-        let bet = null;
-        let user = null;
+        //let bet = null;
+        //let user = null;
 
         let gasPrice = '0';
         let gas = '0';
@@ -117,7 +117,7 @@
             try {
                 //todo: we do something like this to handle reconnect
                 // this doesn't work because we don't have a contract yet so also:
-                // todo: set up contract instance in beforehand and set .defaultAccount 
+                // todo: set up contract instance in beforehand and set .defaultAccount
                 let user = await getUser();
                 // here we're getting caught up to date
                 if (user.fromBlock.gt(user.toBlock)) {
@@ -231,6 +231,11 @@
                 elStateText.innerHTML = "Rolling... (to be continued)";
                 //todo: call lambda
             });
+        }
+
+        let generatePassword = (len) => {
+            let randomChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            return Array.from(Array(len), () => randomChars.charAt(Math.floor(Math.random() * randomChars.length))).join('');
         }
 
         let getPastEvents = async (betId, fromBlock, toBlock, batchLimit) => {

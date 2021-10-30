@@ -48,7 +48,7 @@ exports.handler = async function(event) {
     if (!row.hasOwnProperty(isAddr1 ? 'addr1' : 'addr2')) {
         try {
             let receipt = await layer.contract.methods.confirmBet(betId).send();
-            let isAddr1Begin = receipt.events.BetConfirmed.returnValues.isAddr1Begin;
+            let isAddr1Begin = receipt.events.BetConfirm.returnValues.isAddr1Begin;
             await layer.confirmRow(betId, addr, isAddr1, isAddr1Begin, currentTimestamp);
         } catch (e) {
             console.log(e);
@@ -56,7 +56,7 @@ exports.handler = async function(event) {
         return;
     }
 
-    if (!row.hasOwnProperty('addr1') || !row.hasOwnProperty('addr2')) return; // todo: maybe there's a better way to check if row is confirmed...
+    if (!bet.isConfirmed) return;
 
     let isAddr1Begin = row.isAddr1Begin;
     let rollCount = row.rollCount;

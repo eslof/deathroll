@@ -8,7 +8,7 @@ exports.handler = async function(event) {
     // until authorizer in place we raw dog it
     let addr = event.addr;
     let user = layer.getUser(addr);
-    if (!(user.fromBlock > user.toBlock)) return; //aka current match not concluded
+    if (!(user.fromBlock > user.toBlock)) return; //making sure you're currently in a match, so that it hasn't already ended
     let betId = user.betId;
     let bet = layer.getBet(betId);
 

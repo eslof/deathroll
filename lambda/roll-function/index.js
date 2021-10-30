@@ -16,7 +16,10 @@ exports.handler = async function(event) {
     // 2. generate one-time message to be included in create or join transaction signing
     // 3. verify state; match is confirmed, match is ongoing, user is part of match et.c.
     // 4. trade signed transaction including our message for jwt token with expire to fit match timestamp + config expire
+    // alternatively if you've already signed once and need a new jwt token the user will have to sign for it; this time not as part of a create or join bet transaction
     // 5. forward appropriate data (event.addr, event.betId?)
+
+    // todo: to create or join a bet on balance alone would only need a message signing not a transaction sign if we want to do it for them
 
     let currentTimestamp = Math.floor(Date.now() / 1000);
     if (currentTimestamp > bet.timestamp + (await layer.getConfig()).expireTime) return;

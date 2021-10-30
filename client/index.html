@@ -264,9 +264,9 @@
             let data = await contract.methods.getUser().call();
             return {
                 balance: new BN(data[0]),
-                betId: data[0],
-                fromBlock: new BN(data[0]),
-                toBlock: new BN(data[0]),
+                betId: data[1],
+                fromBlock: new BN(data[2]),
+                toBlock: new BN(data[3]),
             };
         }
 

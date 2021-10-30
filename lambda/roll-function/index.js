@@ -67,7 +67,7 @@ exports.handler = async function(event) {
         let isAddr1Turn = rollCount % 2 === isAddr1Begin ? 0 : 1;
         let isMyTurn = isAddr1 ? isAddr1Turn : !isAddr1Turn;
 
-        if (!isMyTurn && currentTimestamp - rowTimestamp < 10) return;
+        if (!isMyTurn && currentTimestamp - rowTimestamp < 10) return; // todo: off-turn attempts must be distinctly different
 
         let result = await layer.getRoll(row.ceil);
         if (result === 0) {

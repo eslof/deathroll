@@ -103,32 +103,32 @@ contract Deathroll is Admin, Config, Tax {
     
     // Create bet
     
-    function createBet(uint64 auth) external payable {
+    function createBet() external payable {
         requireCreateBet(msg.value, msg.value);
         doCreateBet(msg.value, msg.value, "");
     }
     
-    function createBet(uint64 auth, bytes32 pwdHash) external payable {
+    function createBet(bytes32 pwdHash) external payable {
         requireCreateBet(msg.value, msg.value);
         doCreateBet(msg.value, msg.value, pwdHash);
     }
 
-    function createBet(uint64 auth, uint amount) external payable {
+    function createBet(uint amount) external payable {
         requireCreateBet(msg.value, amount);
         doCreateBet(msg.value, amount, "");
     }
 
-    function createBet(uint64 auth, uint amount, bytes32 pwdHash) external payable {
+    function createBet(uint amount, bytes32 pwdHash) external payable {
         requireCreateBet(msg.value, amount);
         doCreateBet(msg.value, amount, pwdHash);
     }
 
-    function createBetBalance(uint64 auth, uint amount) external {
+    function createBetBalance(uint amount) external {
         requireCreateBet(0, amount);
         doCreateBet(0, amount, "");
     }
     
-    function createBetBalance(uint64 auth, uint amount, bytes32 pwdHash) external {
+    function createBetBalance(uint amount, bytes32 pwdHash) external {
         requireCreateBet(0, amount);
         doCreateBet(0, amount, pwdHash);
     }
@@ -151,22 +151,22 @@ contract Deathroll is Admin, Config, Tax {
     
     // Join bet
     
-    function joinBet(uint64 auth, uint betId) external payable {
+    function joinBet(uint betId) external payable {
         requireJoinBet(betId, msg.value, "");
         doJoinBet(betId);
     }
     
-    function joinBet(uint64 auth, uint betId, bytes32 password) external payable {
+    function joinBet(uint betId, bytes32 password) external payable {
         requireJoinBet(betId, msg.value, password);
         doJoinBet(betId);
     }
     
-    function joinBetBalance(uint64 auth, uint betId) external {
+    function joinBetBalance(uint betId) external {
         requireJoinBet(betId, 0, "");
         doJoinBet(betId);
     }
     
-    function joinBetBalance(uint64 auth, uint betId, bytes32 password) external {
+    function joinBetBalance(uint betId, bytes32 password) external {
         requireJoinBet(betId, 0, password);
         doJoinBet(betId);
     }

@@ -28,13 +28,15 @@ exports.handler = async function(event) {
     }
     */
 
+    //todo: figure out what happens if bad actor spams these functions, do we need some short term locking? probably not
+
     let isAddr1 = event.addr === bet.addr1;
     let row = layer.getRow(betId);
 
     // todo: separate function for confirm and roll
     if (!row.hasOwnProperty('ceil')) { //row not initialized, should really check if row is empty, possibly !row is enough, gotta test
         let betAmount = new BN(layer.web3.utils.fromWei(bet.addr2 === emptyAddr ? bet.balance : bet.balance.div(layer.BN_TWO)));
-
+        // todo: get IRL value to determine ceil as 1 token might be 1 cent or 1 billion dollars at any given moment
         //bet sanity might not be necessary here just makes sure bet * 10 doesn't go over uint256 but maybe with BN library it doesn't matter so idk
         let ceil = betAmount.gte(layer.BN_BET_SANITY) ? layer.BN_CEIL_MAX : BN.max(layer.BN_CEIL_MIN, BN.min(betAmount.mul(layer.BN_TEN), layer.BN_CEIL_MAX));
         await layer.initRow(betId, addr, isAddr1, ceil.toString());
@@ -53,6 +55,8 @@ exports.handler = async function(event) {
         }
         return;
     }
+
+    if (!row.hasOwnProperty('addr1') || !row.hasOwnProperty('addr2')) return; // todo: maybe there's a better way to check if row is confirmed...
 
     let isAddr1Begin = row.isAddr1Begin;
     let rollCount = row.rollCount;

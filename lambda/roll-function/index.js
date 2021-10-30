@@ -57,16 +57,12 @@ exports.handler = async function(event) {
 
     if (!bet.isConfirmed) return;
 
-    let isAddr1Begin = row.isAddr1Begin;
-    let rollCount = row.rollCount;
-    let rowTimestamp = row.timestamp;
-
     try {
         //todo: here's where we would put checks and balances on forcing roll off-turn
-        let isAddr1Turn = rollCount % 2 === isAddr1Begin ? 0 : 1;
+        let isAddr1Turn = row.rollCount % 2 === row.isAddr1Begin ? 0 : 1;
         let isMyTurn = isAddr1 ? isAddr1Turn : !isAddr1Turn;
 
-        if (!isMyTurn && currentTimestamp - rowTimestamp < 10) return; // todo: off-turn attempts must be distinctly different
+        if (!isMyTurn && currentTimestamp - row.timestamp < 10) return; // todo: off-turn attempts must be distinctly different
 
         let result = await layer.getRoll(row.ceil);
         if (result === 0) {

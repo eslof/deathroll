@@ -106,35 +106,21 @@
             //elJoinBetPassword = document.getElementById('join-bet-password');
 
             let user;
-            while (!currentAccount || !currentChainId || currentChainId !== polygonMumbaiChainId || !user) {
+            let config;
+            while (!currentAccount || !currentChainId || currentChainId !== polygonMumbaiChainId || !user || !config) {
                 try {
                     currentAccount = (await web3.eth.requestAccounts())[0];
                     currentChainId = await web3.eth.getChainId();
                     if (currentChainId !== polygonMumbaiChainId) await ethereum.request({ method: 'wallet_switchEthereumChain', params:[{chainId: web3.utils.numberToHex(polygonMumbaiChainId)}]});
                     contract.defaultAccount = currentAccount;
                     user = await getUser();
+                    config = await getConfig();
                     playingAccount = currentAccount;
                 } catch (e) {
                     playingAccount = contract.defaultAccount = null;
                     elStateText.innerHTML = "Please connect your mumbai address";
                     //user canceled or doesn't have metamask/web3
                 }
-            }
-
-            updateActivateButton();
-
-            try {
-                //todo: we do something like this to handle reconnect
-                // this doesn't work because we don't have a contract yet so also:
-                // todo: set up contract instance in beforehand and set .defaultAccount
-                let user = await getUser();
-                // here we're getting caught up to date
-                if (user.fromBlock.gt(user.toBlock)) {
-                    let events = await getPastEvents(user.betId, user.fromBlock, user.toBlock);
-                    events.map(handleEvent);
-                }
-            } catch (e) {
-                // we probably switched chain without connecting the right acocunt
             }
 
             window.ethereum.on('accountsChanged', function (accounts) {
@@ -169,11 +155,13 @@
                     playingAccount = currentAccount;
                     contract.defaultAccount = playingAccount;
 
-                    let user = {};
-                    [user.balance, user.betId, user.fromBlock, user.toBlock] = await contract.methods.getUser().call();
-                    // todo: check if fromBlock > toBlock (meaning currently in a match)
+                    let user = await getUser();
 
-                    let betValue = new BN(web3.utils.toWei('0.1', 'ether'));
+                    if (user.fromBlock.gt(user.toBlock)) return;
+
+                    let betValue = new BN(value);
+
+                    if (betValue.lt(config.betMin) || betValue.gt(config.betMax)) return;
 
                     let receipt; //todo: see if we can use the signing here to auth with instead of a secondary
                     // todo: .. web3.eth.signTransaction(transactionObject, address [, callback]) ->
@@ -239,6 +227,19 @@
                 elStateText.innerHTML = "Rolling... (to be continued)";
                 //todo: call lambda
             });
+
+            try {
+                //todo: we do something like this to handle reconnect
+                // here we're getting caught up to date
+                if (user.fromBlock.gt(user.toBlock)) {
+                    let events = await getPastEvents(user.betId, user.fromBlock, user.toBlock);
+                    events.map(handleEvent); //this just fires handleEvent with item as arg for every item
+                }
+            } catch (e) {
+                //not sure what happens here, we should do this last maybe
+            }
+
+            updateActivateButton();
         }
 
         let generatePassword = (len) => {
@@ -260,6 +261,12 @@
             }
             return events;
         };
+
+        let getConfig = async () => {
+            let config = {};
+            [config.betMax, config.betMin, config.confirmTime, config.expireTime] = (await contract.methods.getConfig().call()).map(new BN);
+            return config;
+        }
 
         let getUser = async () => {
             let data = await contract.methods.getUser().call();

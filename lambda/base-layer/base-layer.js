@@ -39,14 +39,9 @@ let gas = '2'; // limit
 
 //        return (betMax, betMin, confirmTime, expireTime);
 exports.getConfig = async () => {
-    let data = await contract.methods.getConfig().call();
-    return {
-        betMax: new BN(data[0]),
-        betMin: new BN(data[1]),
-        confirmTime: new BN(data[2]),
-        expireTime: new BN(data[3]),
-    };
-
+    let config = {};
+    [config.betMax, config.betMin, config.confirmTime, config.expireTime] = (await contract.methods.getConfig().call()).map(new BN);
+    return config;
 }
 
 exports.getBet = async (betId) => {

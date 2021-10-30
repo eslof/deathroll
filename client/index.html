@@ -27,54 +27,67 @@
     <link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js/dist/web3.min.js"></script>
     <script>
-        let BN = null;
+        let BN;
         let rolls = [];
-        let elRollParent = null;
-        let elStateText = null;
-        let elCreateBetButton = null;
-        let elCreateBetAmount = null;
+        let elRollParent;
+        let elStateText;
+        let elCreateBetButton;
+        let elCreateBetAmount;
         //let elCreateBetPassword = null
-        let elJoinBetButton = null;
-        let elJoinBetId = null;
+        let elJoinBetButton;
+        let elJoinBetId;
         //let elJoinBetPassword = null;
-        let elActivateButton = null;
-        let elAddressText = null;
-        let elPlayerRollButton = null;
-        let elOpponentRollButton = null;
+        let elActivateButton;
+        let elAddressText;
+        let elPlayerRollButton;
+        let elOpponentRollButton;
 
-        let currentCeil = null;
-        let rollCount = null;
-        let isAddr1Begin = null;
-        let isAddr1 = null;
+        let currentCeil;
+        let rollCount;
+        let isAddr1Begin;
+        let isAddr1;
 
         let contractAddr = '';
         let contractABI = JSON.parse('[{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"newAdmin","type":"address"}],"name":"AdminAdd","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"oldAdmin","type":"address"}],"name":"AdminRemove","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"oldOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnerSet","type":"event"},{"inputs":[{"internalType":"address","name":"addr","type":"address"}],"name":"addAdmin","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"getAdmins","outputs":[{"internalType":"address[]","name":"","type":"address[]"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getOwnerBalance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"isAdmin","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"ownerWithdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"addr","type":"address"}],"name":"removeAdmin","outputs":[],"stateMutability":"nonpayable","type":"function"}]');
+        let emptyAddr = '0x0000000000000000000000000000000000000000';
 
-        let contract = null;
-        //let bet = null;
-        //let user = null;
 
         let gasPrice = '0';
         let gas = '0';
-        let polygonMumbaiChainId = 80001;
-        let polygonMainnetChainId = 137;
+
+        let contract;
+        let web3;
+        if (window.ethereum) { //todo: onboarding stuff
+            web3 = new Web3(window.ethereum);
+
+            contract = new web3.eth.Contract(contractABI, contractAddr, {
+                gasPrice: gasPrice, // todo: figure this out
+                gas: gas,
+            });
+        }
+
+        let BN = web3.utils.BN;
+        let BN_TWO = new BN(2);
+        let BN_TEN = new BN(10);
+        let BN_HUNDRED = new BN(100);
+        let BN_TEN_THOUSAND = new BN(10000);
+        let BN_BET_SANITY = new BN(256).pow(BN_TWO).div(BN_TEN);
+
+        let BN_CEIL_MIN = BN_HUNDRED;
+        let BN_CEIL_MAX = BN_TEN_THOUSAND;
+
+
+        const polygonMumbaiChainId = 80001;
+        const polygonMainnetChainId = 137;
 
         let eventSubscription = null;
 
-        let currentChainId = null;
-        let currentAccount = null;
+        let currentChainId;
+        let currentAccount;
+
         let playingAccount = null;
-        //let playingChain = null;
         let currentBet = null;
 
-        let BN_TWO = null;
-        let BN_TEN = null;
-        let BN_HUNDRED = null;
-        let BN_TEN_THOUSAND = null;
-        let BN_BET_SANITY = null;
-
-        let BN_CEIL_MIN = null;
-        let BN_CEIL_MAX = null;
 
         let init = async () => {
             if (!window.ethereum) return;
@@ -91,28 +104,22 @@
             elJoinBetId = document.getElementById('join-bet-id');
             //elJoinBetPassword = document.getElementById('join-bet-password');
 
-            let web3 = new Web3(window.ethereum);
-            while (!currentAccount || !currentChainId || currentChainId !== polygonMumbaiChainId) {
+            let user;
+            while (!currentAccount || !currentChainId || currentChainId !== polygonMumbaiChainId || !user) {
                 try {
                     currentAccount = (await web3.eth.requestAccounts())[0];
                     currentChainId = await web3.eth.getChainId();
                     if (currentChainId !== polygonMumbaiChainId) await ethereum.request({ method: 'wallet_switchEthereumChain', params:[{chainId: web3.utils.numberToHex(polygonMumbaiChainId)}]});
-                    elAddressText.innerText = currentAccount;
+                    contract.defaultAccount = currentAccount;
+                    user = await getUser();
+                    playingAccount = currentAccount;
                 } catch (e) {
+                    elStateText.innerHTML = "Please connect your mumbai address";
                     //user canceled or doesn't have metamask/web3
                 }
             }
 
             updateActivateButton();
-
-            BN = web3.utils.BN;
-            BN_TWO = new BN(2);
-            BN_TEN = new BN(10);
-            BN_HUNDRED = new BN(100);
-            BN_TEN_THOUSAND = new BN(10000);
-            BN_BET_SANITY = new BN(256).pow(BN_TWO).div(BN_TEN);
-            BN_CEIL_MIN = BN_HUNDRED;
-            BN_CEIL_MAX = BN_TEN_THOUSAND;
 
             try {
                 //todo: we do something like this to handle reconnect
@@ -295,11 +302,6 @@
             let isMyTurn;
             let ceil;
             switch (e.event) {
-                case 'BetCancel':
-                    elStateText.innerHTML = "Bet canceled";
-                    currentBet = playingAccount = contract = null;
-                    await eventSubscription.unsubscribe();
-                    break;
                 case 'BetJoin':
                     elStateText.innerHTML = "Waiting for opponent";
                     //todo: check in with lambda + show ui waiting for confirmed
@@ -350,7 +352,12 @@
                     rollCount++;
                     isMyTurn = isAddr1 && rollCount % 2 === isAddr1Begin ? 0 : 1;
                     elStateText.innerHTML = !isMyTurn ? "You lose" : "You win!";
-                    currentBet = playingAccount = contract = null;
+                    playingAccount = null;
+                    await eventSubscription.unsubscribe();
+                    break;
+                case 'BetCancel':
+                    elStateText.innerHTML = "Bet canceled";
+                    playingAccount = null;
                     await eventSubscription.unsubscribe();
                     break;
             }

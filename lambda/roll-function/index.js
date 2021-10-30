@@ -18,14 +18,14 @@ exports.handler = async function(event) {
     // 4. trade signed transaction including our message for jwt token with expire to fit match timestamp + config expire
     // 5. forward appropriate data (event.addr, event.betId?)
 
-    /* todo: separate function for resolve and cancel bet, and then deny here on expire
-    let timestamp = Math.floor(Date.now() / 1000);
-    if (bet.timestamp > timestamp + layer.config.expireTime) {
-        await layer.resolveBet(betId);
-        await layer.completeBet(betId);
-        return;
-    }
-    */
+    let currentTimestamp = Math.floor(Date.now() / 1000);
+    if (currentTimestamp > bet.timestamp + (await layer.getConfig()).expireTime) return;
+
+    //todo: separate function to trade active auth code for free resolve expired/cancel unconfirmed bet
+        //await layer.resolveBet(betId);
+        //await layer.completeBet(betId);
+        //return;
+    //}
 
     //todo: figure out what happens if bad actor spams these functions, do we need some short term locking? probably not
 
@@ -41,8 +41,6 @@ exports.handler = async function(event) {
         await layer.initRow(betId, addr, isAddr1, ceil.toString());
         return;
     }
-
-    let currentTimestamp = Math.floor(Date.now() / 1000);
 
     if (!row.hasOwnProperty(isAddr1 ? 'addr1' : 'addr2')) {
         try {

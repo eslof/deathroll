@@ -163,13 +163,12 @@
 
                     if (betValue.lt(config.betMin) || betValue.gt(config.betMax)) return;
 
-                    let receipt; //todo: see if we can use the signing here to auth with instead of a secondary
-                    // todo: .. web3.eth.signTransaction(transactionObject, address [, callback]) ->
-                    if (user.balance.gte(betValue)) receipt = await contract.methods.createBet(betValue, web3.fromAscii("")).send();
-                    else receipt = await contract.methods.createBet(betValue, web3.fromAscii("")).send({ value: betValue.sub(user.balance) });
-                    // todo: instead of using event to get betId we can make another call ot getUser after await contract...createBet
-                    //let betId = receipt.events.BetCreated.returnValues.betId;
-                    [user.balance, user.betId, user.fromBlock, user.toBlock] = await contract.methods.getUser().call();
+                    //todo: see if we can use the signing here to auth with instead of a secondary
+                    // todo: .. web3.eth.signTransaction(transactionObject, address [, callback]); we probably can't, best bet is encrypted auth in create/joinBet parameter
+                    if (user.balance.gte(betValue)) await contract.methods.createBet(betValue, web3.fromAscii("")).send();
+                    else await contract.methods.createBet(betValue, web3.fromAscii("")).send({ value: betValue.sub(user.balance) });
+
+                    user = await getUser(); //user.betId is updated here after await contract...
                     let betId = user.betId;
                     let fromBlock = user.fromBlock;
                     eventSubscription = contract.events.allEvents({ fromBlock: fromBlock, filter: { betId: betId } }, handleEvent);
@@ -197,7 +196,7 @@
                 elCreateBetButton.disabled = elJoinBetButton.disabled = true; //todo: fix ui
 
                 try {
-                    playingAccount = currentAccount;
+                    playingAccount = currentAccount; //maybe put this last aka if everything succeeded
                     contract.defaultAccount = playingAccount;
 
                     let user = await getUser();
@@ -301,7 +300,7 @@
         event BetJoin(uint indexed betId);
         event BetConfirm(uint indexed betId, bool isAddr1Begin);
         event RollComplete(uint indexed betId, uint rollResult);
-        event BetComplete(uint indexed betId, address indexed winner, address indexed loser, uint betValue);
+        event BetComplete(uint indexed betId, address indexed winner, uint betValue);
         */
 
         let forceTurnTimeout;
@@ -359,7 +358,9 @@
                 case 'BetComplete':
                     rollCount++;
                     isMyTurn = isAddr1 && rollCount % 2 === isAddr1Begin ? 0 : 1;
-                    elStateText.innerHTML = !isMyTurn ? "You lose" : "You win!";
+                    let isMyWin = e.returnValues.winner === playingAccount;
+                    //todo: we know if it was expired resolve coinflip if we compare e.timestamp here to e.timestamp from BetConfirm
+                    elStateText.innerHTML = isMyWin ? "You win!" : "You lose";
                     playingAccount = null;
                     await eventSubscription.unsubscribe();
                     break;

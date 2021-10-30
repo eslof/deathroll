@@ -38,7 +38,7 @@ contract Deathroll is Admin, Config, Tax {
     event BetJoin(uint indexed betId);
     event BetConfirm(uint indexed betId, bool isAddr1Begin);
     event RollComplete(uint indexed betId, uint rollResult);
-    event BetComplete(uint indexed betId, address indexed winner, address indexed loser, uint betValue);
+    event BetComplete(uint indexed betId, address winner, uint betValue);
     
     mapping(uint => Bet) private betById;
     uint private betCount = 0;
@@ -50,28 +50,24 @@ contract Deathroll is Admin, Config, Tax {
     
     function addUserBalance(address addr, uint value) private {
         userByAddress[addr].balance += value;
-        totalUserBalance += value;
-    }
+        totalUserBalance += value; }
     
     function addUserBalance(uint value) private { addUserBalance(msg.sender, value); }
     
     function subtractUserBalance(uint value) private {
         userByAddress[msg.sender].balance -= value;
-        totalUserBalance -= value;
-    }
+        totalUserBalance -= value; }
     
     function userWinAndTax(address addr, uint bet) private {
         uint tax = getTax(bet);
         addOwnerBalance(tax);
-        addUserBalance(addr, bet-tax);
-    }
+        addUserBalance(addr, bet-tax); }
     
     function withdraw(uint amount) public {
         require(userByAddress[msg.sender].balance >= amount, ERROR_BALANCE);
         subtractUserBalance(amount);
         (bool success, ) = msg.sender.call{value: amount}("");
-        require(success, "Failed to withdraw");
-    }
+        require(success, "Failed to withdraw"); }
     
     function withdraw() external { withdraw(userByAddress[msg.sender].balance); }
     
@@ -98,8 +94,7 @@ contract Deathroll is Admin, Config, Tax {
         return userByAddress[msg.sender].fromBlock > userByAddress[msg.sender].toBlock; }
     
     function isExpired(uint betId) private view returns (bool) {
-        return block.timestamp >= betById[betId].timestamp + getExpireTime(); 
-    }
+        return block.timestamp >= betById[betId].timestamp + getExpireTime(); }
     
     // Create bet
     
@@ -215,7 +210,7 @@ contract Deathroll is Admin, Config, Tax {
     
     function doCancelBet(uint betId) private {
         if (betById[betId].addr2 == address(0)) doCancelEmptyBet(betId);
-        else doCancelUncomfirmedBet(betId);
+        else doCancelUnconfirmedBet(betId);
     }
     
     function doCancelEmptyBet(uint betId) private {
@@ -226,7 +221,7 @@ contract Deathroll is Admin, Config, Tax {
         addUserBalance(addr1, betBalance);
     }
     
-    function doCancelUncomfirmedBet(uint betId) private {
+    function doCancelUnconfirmedBet(uint betId) private {
         require(!betById[betId].isConfirmed, "Bet already confirmed");
         require(block.timestamp >= betById[betId].timestamp + getConfirmTime(), "Confirm not expired");
         emit BetCancel(betId);
@@ -269,7 +264,7 @@ contract Deathroll is Admin, Config, Tax {
     function doCompleteBet(uint betId, bool isAddr1Winner) private {
         Bet memory b = betById[betId];
         address winner = isAddr1Winner ? b.addr1 : b.addr2;
-        emit BetComplete(betId, winner, !isAddr1Winner ? b.addr1 : b.addr2, b.balance / 2);
+        emit BetComplete(betId, winner, b.balance / 2);
         userByAddress[b.addr1].toBlock = userByAddress[b.addr2].toBlock = block.number;
         delete betById[betId];
         userWinAndTax(winner, b.balance);

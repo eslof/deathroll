@@ -8,6 +8,7 @@ exports.handler = async function(event) {
     let user = await layer.getUser(addr);
     if (!(user.fromBlock > user.toBlock)) return; //making sure you're currently in a match, so that it hasn't already ended
     let betId = user.betId;
+
     let bet = await layer.getBet(betId);
     if (bet.isConfirmed) return;
 
@@ -16,10 +17,9 @@ exports.handler = async function(event) {
     if (bcTimestamp > bet.timestamp + (await layer.getConfig()).expireTime) return;
 
     let row = await layer.getRow(betId);
-
     let isAddr1 = event.addr === bet.addr1;
 
-    if (row === []) { //row not initialized, should really check if row is empty, possibly !row is enough, gotta test
+    if (Object.keys(row).length === 0) { //row not initialized, should really check if row is empty, possibly !row is enough, gotta test
         let betAmount = new BN(layer.web3.utils.fromWei(bet.addr2 === emptyAddr ? bet.balance : bet.balance.div(layer.BN_TWO)));
         // todo: get IRL value to determine ceil as 1 token might be 1 cent or 1 billion dollars at any given moment
         //bet sanity might not be necessary here just makes sure bet * 10 doesn't go over uint256 but maybe with BN library it doesn't matter so idk

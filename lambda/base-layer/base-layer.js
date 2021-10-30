@@ -7,16 +7,18 @@ exports.blockRange = 10000;
 //There is a big difference between responses directly from AWS.DynamoDB and AWS.DynamoDB.DocumentClient. In short, the former will return numbers as strings, while the latter will return numbers as numbers.
 exports.dc = new AWS.DynamoDB.DocumentClient();
 exports.kms = new AWS.KMS();
+
 let web3 = new Web3(new Web3.providers.HttpProvider(url+projectId));
 exports.web3 = web3;
+
 let BN = web3.utils.BN; //toBN // todo: figure out what's right here
 exports.BN = BN;
-let BN_TWO = new BN(2);
-exports.BN_TWO = BN_TWO;
+
+exports.BN_TWO = new BN(2);
 exports.BN_TEN = new BN(10);
 exports.BN_HUNDRED = new BN(100);
 exports.BN_TEN_THOUSAND = new BN(10000);
-exports.BN_BET_SANITY = new BN(256).pow(BN_TWO).div(exports.BN_TEN);
+exports.BN_BET_SANITY = new BN(256).pow(exports.BN_TWO).div(exports.BN_TEN);
 exports.BN_CEIL_MIN = exports.BN_HUNDRED;
 exports.BN_CEIL_MAX = exports.BN_TEN_THOUSAND;
 
@@ -34,14 +36,6 @@ let adminPrivateKey = '';
 let contractAbi = JSON.parse('[{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"newAdmin","type":"address"}],"name":"AdminAdd","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"oldAdmin","type":"address"}],"name":"AdminRemove","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"oldOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnerSet","type":"event"},{"inputs":[{"internalType":"address","name":"addr","type":"address"}],"name":"addAdmin","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"getAdmins","outputs":[{"internalType":"address[]","name":"","type":"address[]"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getOwnerBalance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"isAdmin","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"ownerWithdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"addr","type":"address"}],"name":"removeAdmin","outputs":[],"stateMutability":"nonpayable","type":"function"}]');
 let gasPrice = '1';
 let gas = '2'; // limit
-
-exports.BN_TWO = null;
-exports.BN_TEN = null;
-exports.BN_HUNDRED = null;
-exports.BN_TEN_THOUSAND = null;
-exports.BN_BET_SANITY = null;
-exports.BN_CEIL_MIN = null;
-exports.BN_CEIL_MAX = null;
 
 //        return (betMax, betMin, confirmTime, expireTime);
 exports.init = async () => {

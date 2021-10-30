@@ -33,10 +33,10 @@ contract Deathroll is Admin, Config, Tax {
     // todo: revert back to betopen instead of betcreated, and have function to "set open" 
     //bet canceled event? refactor so user betid stays and instead we check betById[id].isOngoing or isComplete (depending on default vs set)
     // todo: figure out how to deal with starting a match with password, closing browser, opening on your device, we can't get your password to show you invite link
-    event BetCreated(bool indexed isOpen, uint betId, uint betValue);
-    event BetCanceled(uint indexed betId);
-    event BetJoined(uint indexed betId);
-    event BetConfirmed(uint indexed betId, bool isAddr1Begin);
+    event BetOpen(uint betId, uint betValue);
+    event BetCancel(uint indexed betId);
+    event BetJoin(uint indexed betId);
+    event BetConfirm(uint indexed betId, bool isAddr1Begin);
     event RollComplete(uint indexed betId, uint rollResult);
     event BetComplete(uint indexed betId, address indexed winner, address indexed loser, uint betValue);
     
@@ -103,32 +103,32 @@ contract Deathroll is Admin, Config, Tax {
     
     // Create bet
     
-    function createBet() external payable {
+    function createBet(uint64 auth) external payable {
         requireCreateBet(msg.value, msg.value);
         doCreateBet(msg.value, msg.value, "");
     }
     
-    function createBet(bytes32 pwdHash) external payable {
+    function createBet(uint64 auth, bytes32 pwdHash) external payable {
         requireCreateBet(msg.value, msg.value);
         doCreateBet(msg.value, msg.value, pwdHash);
     }
 
-    function createBet(uint amount) external payable {
+    function createBet(uint64 auth, uint amount) external payable {
         requireCreateBet(msg.value, amount);
         doCreateBet(msg.value, amount, "");
     }
 
-    function createBet(uint amount, bytes32 pwdHash) external payable {
+    function createBet(uint64 auth, uint amount, bytes32 pwdHash) external payable {
         requireCreateBet(msg.value, amount);
         doCreateBet(msg.value, amount, pwdHash);
     }
 
-    function createBetBalance(uint amount) external {
+    function createBetBalance(uint64 auth, uint amount) external {
         requireCreateBet(0, amount);
         doCreateBet(0, amount, "");
     }
     
-    function createBetBalance(uint amount, bytes32 pwdHash) external {
+    function createBetBalance(uint64 auth, uint amount, bytes32 pwdHash) external {
         requireCreateBet(0, amount);
         doCreateBet(0, amount, pwdHash);
     }
@@ -146,27 +146,27 @@ contract Deathroll is Admin, Config, Tax {
         betById[betId] = Bet(false, msg.sender, address(0), amount, block.timestamp, pwdHash);
         userByAddress[msg.sender].betId = betId;
         userByAddress[msg.sender].fromBlock = block.number;
-        emit BetCreated(pwdHash == "", betId, amount); //put this back as BetOpen only if password is "", we get betid ourselves by getuser on receipt
+        if (pwdHash == "") emit BetOpen(betId, amount);
     }
     
     // Join bet
     
-    function joinBet(uint betId) external payable {
+    function joinBet(uint64 auth, uint betId) external payable {
         requireJoinBet(betId, msg.value, "");
         doJoinBet(betId);
     }
     
-    function joinBet(uint betId, bytes32 password) external payable {
+    function joinBet(uint64 auth, uint betId, bytes32 password) external payable {
         requireJoinBet(betId, msg.value, password);
         doJoinBet(betId);
     }
     
-    function joinBetBalance(uint betId) external {
+    function joinBetBalance(uint64 auth, uint betId) external {
         requireJoinBet(betId, 0, "");
         doJoinBet(betId);
     }
     
-    function joinBetBalance(uint betId, bytes32 password) external {
+    function joinBetBalance(uint64 auth, uint betId, bytes32 password) external {
         requireJoinBet(betId, 0, password);
         doJoinBet(betId);
     }
@@ -189,7 +189,7 @@ contract Deathroll is Admin, Config, Tax {
         else addUserBalance(msg.value - amount);
         betById[betId].timestamp = block.timestamp;
         userByAddress[msg.sender].fromBlock = block.number;
-        emit BetJoined(betId);
+        emit BetJoin(betId);
     }
     
     // Resolve expired bet
@@ -229,7 +229,7 @@ contract Deathroll is Admin, Config, Tax {
     function doCancelUncomfirmedBet(uint betId) private {
         require(!betById[betId].isConfirmed, "Bet already confirmed");
         require(block.timestamp >= betById[betId].timestamp + getConfirmTime(), "Confirm not expired");
-        emit BetCanceled(betId);
+        emit BetCancel(betId);
         address addr1 = betById[betId].addr1; address addr2 = betById[betId].addr2;
         uint betBalance = betById[betId].balance;
         userByAddress[addr1].toBlock = userByAddress[addr2].toBlock = block.number;
@@ -256,7 +256,7 @@ contract Deathroll is Admin, Config, Tax {
     function confirmBet(uint betId) external onlyAdmin {
         requireBetProgress(betId, false);
         betById[betId].isConfirmed = true;
-        emit BetConfirmed(betId, coinFlip());
+        emit BetConfirm(betId, coinFlip());
     }
     
     // Bet Complete  (admin)

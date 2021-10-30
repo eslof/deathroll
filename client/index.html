@@ -280,12 +280,14 @@
                 rolls[i].styles.opacity = `${100-(i*10)}%`;
             }
         }
-/*
-        event BetCanceled(uint indexed betId);
-        event BetJoined(uint indexed betId);
-        event BetConfirmed(uint indexed betId, bool isAddr1Begin);
+        /*
+        event BetOpen(uint betId, uint betValue);
+        event BetCancel(uint indexed betId);
+        event BetJoin(uint indexed betId);
+        event BetConfirm(uint indexed betId, bool isAddr1Begin);
         event RollComplete(uint indexed betId, uint rollResult);
-        event BetComplete(uint indexed betId, address indexed winner, address indexed loser, uint betValue);*/
+        event BetComplete(uint indexed betId, address indexed winner, address indexed loser, uint betValue);
+        */
 
         let forceTurnTimeout;
 
@@ -293,16 +295,16 @@
             let isMyTurn;
             let ceil;
             switch (e.event) {
-                case 'BetCanceled':
+                case 'BetCancel':
                     elStateText.innerHTML = "Bet canceled";
                     currentBet = playingAccount = contract = null;
                     await eventSubscription.unsubscribe();
                     break;
-                case 'BetJoined':
+                case 'BetJoin':
                     elStateText.innerHTML = "Waiting for opponent";
                     //todo: check in with lambda + show ui waiting for confirmed
                     break;
-                case 'BetConfirmed':
+                case 'BetConfirm':
                     rollCount = 0;
                     let bet = await getBet();
                     let betAmount = bet.balance.div(2);

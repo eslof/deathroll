@@ -58,7 +58,7 @@ exports.init = async () => {
 };
 
 exports.getBet = async (betId) => {
-    let data = await contract.methods.getBet().call();
+    let data = await contract.methods.getBet(betId).call();
     return {
         isConfirmed: data[0],
         addr1: data[1],
@@ -71,7 +71,7 @@ exports.getBet = async (betId) => {
 
 exports.getUser = async (address) => {
     let user = {};
-    [user.balance, user.betId, user.fromBlock, user.toBlock] = (await contract.methods.getUser().call()).map(item => new BN(item));
+    [user.balance, user.betId, user.fromBlock, user.toBlock] = (await contract.methods.getUser(address).call()).map(item => new BN(item));
     return user;
 };
 

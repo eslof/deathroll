@@ -377,9 +377,9 @@
             let ceil;
             switch (e.event) {
                 case 'BetJoin':
-                    elStateText.innerHTML = "Waiting for opponent";
+                    elStateText.innerHTML = "Waiting for opponent to confirm";
                     const resp = await lambdaConfirm(playingAccount, currentAuth);
-                    if (!resp) return;// todo: retry?
+                    if (!resp) elStateText.innerHTML = "Unable to confirm...";
                     break;
                 case 'BetConfirm':
                     rollCount = 0;
@@ -395,7 +395,10 @@
 
                     elStateText.innerHTML = isMyTurn ? "Your turn" : "";
 
-                    if (!isMyTurn) forceTurnTimeout = setTimeout(() => {}, 15000); //todo: call lambda
+                    if (!isMyTurn) forceTurnTimeout = setTimeout(() => {
+                        elStateText.innerHTML = "Forcing opponent roll.";
+                        lambdaForceRoll(currentToken);
+                    }, 15000);
                     break;
                     //1 % 2 = 1
                     //2 % 2 = 0
@@ -421,7 +424,10 @@
 
                     currentCeil = result;
 
-                    if (!isMyTurn) forceTurnTimeout = setTimeout(() => { lambdaForceRoll(currentToken); }, 15000); //todo: call lambda
+                    if (!isMyTurn) forceTurnTimeout = setTimeout(() => {
+                        elStateText.innerHTML = "Forcing opponent roll.";
+                        lambdaForceRoll(currentToken);
+                        }, 15000);
                     break;
                 case 'BetComplete':
                     rollCount++;

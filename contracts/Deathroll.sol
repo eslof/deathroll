@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: CC BY
 pragma solidity ^0.8.7;
-import "./Admin.sol";
 import "./Config.sol";
-import "./Tax.sol";
 
 struct User {
     uint balance;
@@ -20,162 +18,113 @@ struct Bet {
     bytes32 password;
 }
 
-// todo: cache any storage reference
-contract Deathroll is Admin, Config, Tax {
+contract Deathroll is Config {
 
-    string private constant ERROR_BET_MISSING = "Bet not found";
-    string private constant ERROR_BET_ONGOING = "Bet ongoing";
-    string private constant ERROR_BET_PENDING = "Bet awaiting participant";
-    string private constant ERROR_BET_TAKEN = "Bet taken";
-    string private constant ERROR_BET_PASSWORD = "Bet password mismatch";
-    string private constant ERROR_BET_CONFIRMED = "Bet already confirmed";
-    
-    // todo: revert back to betopen instead of betcreated, and have function to "set open" 
-    //bet canceled event? refactor so user betid stays and instead we check betById[id].isOngoing or isComplete (depending on default vs set)
+    // todo: function to "set open" and "refresh" (aka re-emit)
     // todo: figure out how to deal with starting a match with password, closing browser, opening on your device, we can't get your password to show you invite link
-    event BetOpen(uint betId, uint betValue);
+    event BetOpen(uint betId, uint value);
     event BetCancel(uint indexed betId);
     event BetJoin(uint indexed betId);
     event BetConfirm(uint indexed betId, bool isAddr1Begin);
-    event RollComplete(uint indexed betId, uint rollResult);
-    event BetComplete(uint indexed betId, address winner, uint betValue);
-    
+    event RollComplete(uint indexed betId, uint result);
+    event BetComplete(uint indexed betId, address winner, uint value);
+
     mapping(uint => Bet) private betById;
     uint private betCount = 0;
 
     mapping(address => User) private userByAddress;
     uint private totalUserBalance;
-    
+
     // User
-    
     function addUserBalance(address addr, uint value) private {
         userByAddress[addr].balance += value;
         totalUserBalance += value; }
-    
+
     function addUserBalance(uint value) private { addUserBalance(msg.sender, value); }
-    
+
     function subtractUserBalance(uint value) private {
         userByAddress[msg.sender].balance -= value;
         totalUserBalance -= value; }
-    
+
     function userWinAndTax(address addr, uint bet) private {
         uint tax = getTax(bet);
-        addOwnerBalance(tax);
-        addUserBalance(addr, bet-tax); }
-    
+        addUserBalance(addr, bet-tax);
+        (bool success, ) = owner().call{value: tax}("");
+        require(success, ERROR_WITHDRAW);
+    }
+
     function withdraw(uint amount) public {
         require(userByAddress[msg.sender].balance >= amount, ERROR_BALANCE);
         subtractUserBalance(amount);
         (bool success, ) = msg.sender.call{value: amount}("");
-        require(success, "Failed to withdraw"); }
-    
+        require(success, ERROR_WITHDRAW); }
+
     function withdraw() external { withdraw(userByAddress[msg.sender].balance); }
-    
+
     // Generic
-    
+
     receive() external payable { }
-    
+
     function getBet() external view returns (Bet memory) { return betById[userByAddress[msg.sender].betId]; }
-    
+
     function getBet(uint betId) external view returns (Bet memory) { return betById[betId]; }
-    
+
     function getUser() external view returns (User memory) { return userByAddress[msg.sender]; }
-    
-    function getUser(address addr) external view onlyAdmin returns (User memory) { return userByAddress[addr]; }
-    
+
+    function getUser(address addr) external view onlyOwner returns (User memory) { return userByAddress[addr]; }
+
     function getContractBalance() external view onlyOwner returns (int) {
-        return int(address(this).balance) - int(totalUserBalance) - int(getOwnerBalance()); }
-    
-    function coinFlip() private view returns (bool) { return block.number % 2 == 0; }
-    
+        return int(address(this).balance) - int(totalUserBalance); }
+
+    function coinFlip() private view returns (bool) {
+        return uint8(uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty, gasleft(), totalUserBalance, owner().balance))) % 256) > 127;
+    }
+
     // Requirements
-    
+
     function isBetOngoing() private view returns (bool) {
         return userByAddress[msg.sender].fromBlock > userByAddress[msg.sender].toBlock; }
-    
+
     function isExpired(uint betId) private view returns (bool) {
         return block.timestamp >= betById[betId].timestamp + getExpireTime(); }
-    
+
     // Create bet
-    
-    function createBet() external payable {
-        requireCreateBet(msg.value, msg.value);
-        doCreateBet(msg.value, msg.value, "");
-    }
-    
-    function createBet(bytes32 pwdHash) external payable {
-        requireCreateBet(msg.value, msg.value);
-        doCreateBet(msg.value, msg.value, pwdHash);
-    }
 
-    function createBet(uint amount) external payable {
-        requireCreateBet(msg.value, amount);
-        doCreateBet(msg.value, amount, "");
-    }
-
-    function createBet(uint amount, bytes32 pwdHash) external payable {
-        requireCreateBet(msg.value, amount);
-        doCreateBet(msg.value, amount, pwdHash);
-    }
-
-    function createBetBalance(uint amount) external {
-        requireCreateBet(0, amount);
-        doCreateBet(0, amount, "");
-    }
-    
-    function createBetBalance(uint amount, bytes32 pwdHash) external {
-        requireCreateBet(0, amount);
-        doCreateBet(0, amount, pwdHash);
-    }
-    
-    function requireCreateBet(uint value, uint amount) private view {
+    function createBet(bytes20 auth, uint amount, bytes32 pwdHash) external payable {
         require(!isBetOngoing(), ERROR_BET_ONGOING);
-        require(userByAddress[msg.sender].balance + value >= amount, ERROR_BALANCE);
+        require(amount > 0 && userByAddress[msg.sender].balance + msg.value > amount || msg.value > 0, ERROR_BALANCE);
+        amount = amount > 0 ? amount : msg.value;
         requireBetLimit(amount);
+        doCreateBet(amount, pwdHash);
     }
-    
-    function doCreateBet(uint value, uint amount, bytes32 pwdHash) private {
+
+    function doCreateBet(uint amount, bytes32 pwdHash) private {
         uint betId = ++betCount;
-        if (value < amount) subtractUserBalance(amount - value);
-        else addUserBalance(value - amount);
+        if (msg.value < amount) subtractUserBalance(amount - msg.value);
+        else addUserBalance(msg.value - amount);
         betById[betId] = Bet(false, msg.sender, address(0), amount, block.timestamp, pwdHash);
         userByAddress[msg.sender].betId = betId;
         userByAddress[msg.sender].fromBlock = block.number;
         if (pwdHash == "") emit BetOpen(betId, amount);
     }
-    
+
     // Join bet
-    
-    function joinBet(uint betId) external payable {
-        requireJoinBet(betId, msg.value, "");
+
+    function joinBet(bytes20 auth, uint betId, bytes32 password) external payable {
+        requireJoinBet(betId, password);
         doJoinBet(betId);
     }
-    
-    function joinBet(uint betId, bytes32 password) external payable {
-        requireJoinBet(betId, msg.value, password);
-        doJoinBet(betId);
-    }
-    
-    function joinBetBalance(uint betId) external {
-        requireJoinBet(betId, 0, "");
-        doJoinBet(betId);
-    }
-    
-    function joinBetBalance(uint betId, bytes32 password) external {
-        requireJoinBet(betId, 0, password);
-        doJoinBet(betId);
-    }
-    
-    //admin can test password without having to call more than getBet
-    function requireJoinBet(uint betId, uint value, bytes32 password) private view {
+
+    //we can test password without having to call more than getBet if asked to join
+    function requireJoinBet(uint betId, bytes32 password) private view {
         require(betById[betId].addr1 != address(0) && betById[betId].balance > 0, ERROR_BET_MISSING);
-        require(userByAddress[msg.sender].balance + value >= betById[betId].balance, ERROR_BALANCE);
+        require(userByAddress[msg.sender].balance + msg.value >= betById[betId].balance, ERROR_BALANCE);
         require(betById[betId].addr2 == address(0), ERROR_BET_TAKEN);
         require(!isExpired(betById[betId].timestamp), ERROR_BET_EXPIRED);
         require(betById[betId].password == "" && password == "" || keccak256(abi.encode(password)) == betById[betId].password, ERROR_BET_PASSWORD); //we can verify the password before we join
-        if (!isAdmin()) require(!isBetOngoing(), ERROR_BET_ONGOING); // admin can play multiple bets
+        require(!isBetOngoing(), ERROR_BET_ONGOING);
     }
-    
+
     function doJoinBet(uint betId) private {
         uint amount = betById[betId].balance;
         betById[betId].addr2 = msg.sender;
@@ -186,7 +135,7 @@ contract Deathroll is Admin, Config, Tax {
         userByAddress[msg.sender].fromBlock = block.number;
         emit BetJoin(betId);
     }
-    
+
     // Resolve expired bet
 
     function resolveBet() external {
@@ -196,23 +145,23 @@ contract Deathroll is Admin, Config, Tax {
         require(isExpired(betById[betId].timestamp), ERROR_BET_NOT_EXPIRED);
         doCompleteBet(betId, coinFlip());
     }
-    
-    // Cancel bet (user and admin)
-    
-    function cancelBet(uint betId) external onlyAdmin { // so that we can cancel on your behalf aka don't have to sign
+
+    // Cancel bet (user and owner)
+
+    function cancelBet(uint betId) external onlyOwner { // so that we can cancel on your behalf aka don't have to sign
         doCancelBet(betId);
     }
-    
+
     function cancelBet() external { // but if our service is down this and resolveBet will ensure you're able to get your funds regardless of off-chain status
         require(isBetOngoing(), ERROR_BET_MISSING);
         doCancelBet(userByAddress[msg.sender].betId);
     }
-    
+
     function doCancelBet(uint betId) private {
         if (betById[betId].addr2 == address(0)) doCancelEmptyBet(betId);
         else doCancelUnconfirmedBet(betId);
     }
-    
+
     function doCancelEmptyBet(uint betId) private {
         address addr1 = betById[betId].addr1;
         uint betBalance = betById[betId].balance;
@@ -220,10 +169,10 @@ contract Deathroll is Admin, Config, Tax {
         delete betById[betId];
         addUserBalance(addr1, betBalance);
     }
-    
+    //todo: prefix all private functions with _ instead
     function doCancelUnconfirmedBet(uint betId) private {
-        require(!betById[betId].isConfirmed, "Bet already confirmed");
-        require(block.timestamp >= betById[betId].timestamp + getConfirmTime(), "Confirm not expired");
+        require(!betById[betId].isConfirmed, ERROR_BET_CONFIRMED);
+        require(block.timestamp >= betById[betId].timestamp + getConfirmTime(), ERROR_CONFIRM_NOT_EXPIRED);
         emit BetCancel(betId);
         address addr1 = betById[betId].addr1; address addr2 = betById[betId].addr2;
         uint betBalance = betById[betId].balance;
@@ -231,36 +180,36 @@ contract Deathroll is Admin, Config, Tax {
         delete betById[betId];
         addUserBalance(addr1, betBalance / 2); addUserBalance(addr2, betBalance / 2);
     }
-    
-    // Roll complete (admin)
-    
+
+    // Roll complete (owner)
+
     function requireBetProgress(uint betId, bool isConfirmedExpected) private view {
         require(betById[betId].addr1 != address(0), ERROR_BET_MISSING);
         require(betById[betId].addr2 != address(0), ERROR_BET_PENDING);
-        if (isConfirmedExpected) require(betById[betId].isConfirmed, "Bet not confirmed");
-        else require(!betById[betId].isConfirmed, "Bet already confirmed");
+        if (isConfirmedExpected) require(betById[betId].isConfirmed, ERROR_BET_NOT_CONFIRMED);
+        else require(!betById[betId].isConfirmed, ERROR_BET_CONFIRMED);
     }
-    
-    function completeRoll(uint betId, uint rollResult) external onlyAdmin {
+
+    function completeRoll(uint betId, uint result) external onlyOwner {
         requireBetProgress(betId, true);
-        emit RollComplete(betId, rollResult);
+        emit RollComplete(betId, result);
     }
-    
-    // Bet confirm (admin)
-    
-    function confirmBet(uint betId) external onlyAdmin {
+
+    // Bet confirm (owner)
+
+    function confirmBet(uint betId) external onlyOwner {
         requireBetProgress(betId, false);
         betById[betId].isConfirmed = true;
         emit BetConfirm(betId, coinFlip());
     }
-    
-    // Bet Complete  (admin)
 
-    function completeBet(uint betId, bool isAddr1Winner) external onlyAdmin {
+    // Bet Complete  (owner)
+
+    function completeBet(uint betId, bool isAddr1Winner) external onlyOwner {
         requireBetProgress(betId, true);
         doCompleteBet(betId, isAddr1Winner);
     }
-    
+
     function doCompleteBet(uint betId, bool isAddr1Winner) private {
         Bet memory b = betById[betId];
         address winner = isAddr1Winner ? b.addr1 : b.addr2;

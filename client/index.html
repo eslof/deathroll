@@ -47,35 +47,27 @@
         let isAddr1Begin;
         let isAddr1;
 
-        let contractAddr = '';
-        let contractABI = JSON.parse('[{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"newAdmin","type":"address"}],"name":"AdminAdd","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"oldAdmin","type":"address"}],"name":"AdminRemove","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"oldOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnerSet","type":"event"},{"inputs":[{"internalType":"address","name":"addr","type":"address"}],"name":"addAdmin","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"getAdmins","outputs":[{"internalType":"address[]","name":"","type":"address[]"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getOwnerBalance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"isAdmin","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"ownerWithdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"addr","type":"address"}],"name":"removeAdmin","outputs":[],"stateMutability":"nonpayable","type":"function"}]');
+        let contractAddr = '0x17d9AadB4F3D39199d30B3A8abfC5F79084A67f9';
+        let contractABI = JSON.parse('[{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"betId","type":"uint256"}],"name":"BetCancel","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"betId","type":"uint256"},{"indexed":false,"internalType":"address","name":"winner","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"BetComplete","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"betId","type":"uint256"},{"indexed":false,"internalType":"bool","name":"isAddr1Begin","type":"bool"}],"name":"BetConfirm","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"betId","type":"uint256"}],"name":"BetJoin","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"betId","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"BetOpen","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"betId","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"result","type":"uint256"}],"name":"RollComplete","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"denominator","type":"uint256"}],"name":"TaxSet","type":"event"},{"inputs":[{"internalType":"uint256","name":"betId","type":"uint256"}],"name":"cancelBet","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"cancelBet","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"betId","type":"uint256"},{"internalType":"bool","name":"isAddr1Winner","type":"bool"}],"name":"completeBet","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"betId","type":"uint256"},{"internalType":"uint256","name":"result","type":"uint256"}],"name":"completeRoll","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"betId","type":"uint256"}],"name":"confirmBet","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes20","name":"auth","type":"bytes20"},{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"bytes32","name":"pwdHash","type":"bytes32"}],"name":"createBet","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"uint256","name":"betId","type":"uint256"}],"name":"getBet","outputs":[{"components":[{"internalType":"bool","name":"isConfirmed","type":"bool"},{"internalType":"address","name":"addr1","type":"address"},{"internalType":"address","name":"addr2","type":"address"},{"internalType":"uint256","name":"balance","type":"uint256"},{"internalType":"uint256","name":"timestamp","type":"uint256"},{"internalType":"bytes32","name":"password","type":"bytes32"}],"internalType":"struct Bet","name":"","type":"tuple"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getBet","outputs":[{"components":[{"internalType":"bool","name":"isConfirmed","type":"bool"},{"internalType":"address","name":"addr1","type":"address"},{"internalType":"address","name":"addr2","type":"address"},{"internalType":"uint256","name":"balance","type":"uint256"},{"internalType":"uint256","name":"timestamp","type":"uint256"},{"internalType":"bytes32","name":"password","type":"bytes32"}],"internalType":"struct Bet","name":"","type":"tuple"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getConfig","outputs":[{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getContractBalance","outputs":[{"internalType":"int256","name":"","type":"int256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getTax","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"addr","type":"address"}],"name":"getUser","outputs":[{"components":[{"internalType":"uint256","name":"balance","type":"uint256"},{"internalType":"uint256","name":"betId","type":"uint256"},{"internalType":"uint256","name":"fromBlock","type":"uint256"},{"internalType":"uint256","name":"toBlock","type":"uint256"}],"internalType":"struct User","name":"","type":"tuple"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getUser","outputs":[{"components":[{"internalType":"uint256","name":"balance","type":"uint256"},{"internalType":"uint256","name":"betId","type":"uint256"},{"internalType":"uint256","name":"fromBlock","type":"uint256"},{"internalType":"uint256","name":"toBlock","type":"uint256"}],"internalType":"struct User","name":"","type":"tuple"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bytes20","name":"auth","type":"bytes20"},{"internalType":"uint256","name":"betId","type":"uint256"},{"internalType":"bytes32","name":"password","type":"bytes32"}],"name":"joinBet","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[],"name":"openBet","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"openBetRenew","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"resolveBet","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"min","type":"uint256"},{"internalType":"uint256","name":"max","type":"uint256"}],"name":"setBetLimits","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"denominator","type":"uint256"}],"name":"setTax","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"confirm","type":"uint256"},{"internalType":"uint256","name":"expire","type":"uint256"}],"name":"setTimeLimits","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"taxLimit","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},{"stateMutability":"payable","type":"receive"}]');
         let emptyAddr = '0x0000000000000000000000000000000000000000';
-
-
-        let gasPrice = '0';
-        let gas = '0';
 
         let contract;
         let web3;
         if (window.ethereum) { //todo: onboarding stuff
             web3 = new Web3(window.ethereum);
-
-            contract = new web3.eth.Contract(contractABI, contractAddr, {
-                gasPrice: gasPrice, // todo: figure this out
-                gas: gas,
-            });
+            contract = new web3.eth.Contract(contractABI, contractAddr);
         }
 
-        let BN = web3.utils.BN;
-        let BN_ZERO = new BN(0);
-        let BN_TWO = new BN(2);
-        let BN_TEN = new BN(10);
-        let BN_HUNDRED = new BN(100);
-        let BN_TEN_THOUSAND = new BN(10000);
-        let BN_BET_SANITY = new BN(256).pow(BN_TWO).div(BN_TEN);
+        const BN = web3.utils.BN;
+        const BN_ZERO = new BN(0);
+        const BN_TWO = new BN(2);
+        const BN_TEN = new BN(10);
+        const BN_HUNDRED = new BN(100);
+        const BN_TEN_THOUSAND = new BN(10000);
+        const BN_BET_SANITY = new BN(256).pow(BN_TWO).div(BN_TEN);
 
-        let BN_CEIL_MIN = BN_HUNDRED;
-        let BN_CEIL_MAX = BN_TEN_THOUSAND;
+        const BN_CEIL_MIN = BN_HUNDRED;
+        const BN_CEIL_MAX = BN_TEN_THOUSAND;
 
 
         const polygonMumbaiChainId = 80001;
@@ -89,8 +81,52 @@
         let playingAccount = null;
         let currentBet = null;
 
+        const lambdaConfirm = async (addr, authMsg) => {
+            const resp = await postToLambda({ addr: addr, msg: authMsg, action: 'confirm' });
+            if (!resp) { alert("XMLHttpRequest failed!"); return; }
+            if ('errorMessage' in resp) { alert(resp.errorMessage); return; }
+            if (!('token' in resp)) { alert(JSON.stringify(resp)); return; }
+            const token = resp.token;
+            // todo: save token to localStorage
+        }
 
-        let init = async () => {
+        // todo: a token can be given at any time for any action
+        // todo: ..by sending addr with no token, signing the return msg and supplying "sig": signedmsg; you'll then have token in resp
+        const lambdaRoll = async (token) => {
+            const resp = await postToLambda({ token: token, action: 'roll' }); // todo: if no token in localStorage ^
+            if (!resp) { alert("XMLHttpRequest failed!"); return; }
+            if ('errorMessage' in resp) { alert(resp.errorMessage); return; }
+            // todo: if ('token' in resp) { ...
+        }
+
+        const lambdaForceRoll = async (token) => {
+            const resp = await postToLambda({ token: token, action: 'roll' });
+            if (!resp) { alert("XMLHttpRequest failed!"); return; }
+            if ('errorMessage' in resp) { alert(resp.errorMessage); return; }
+        }
+
+        const postToLambda = async (data) => {
+            const xhr = new XMLHttpRequest();
+            const url = "https://kqpu3zkgjl.execute-api.eu-central-1.amazonaws.com/Deathroll";
+            xhr.open("POST", url, true);
+            xhr.setRequestHeader("Content-Type", "application/json");
+            return await new Promise((resolve, reject) => {
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState === XMLHttpRequest.DONE) {
+                        const status = xhr.status;
+                        if (status === 0 || (status >= 200 && status < 400)) {
+                            resolve(JSON.parse(xhr.responseText));
+                        } else {
+                            console.log(xhr.responseText);
+                            reject();
+                        }
+                    }
+                };
+                xhr.send(JSON.stringify(data));
+            });
+        }
+
+        const init = async () => {
             if (!window.ethereum) return;
 
             elRollParent = document.getElementById('roll-text-div');

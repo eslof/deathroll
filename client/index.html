@@ -244,6 +244,20 @@
             updateActivateButton();
         }
 
+        async function sha1(str) {
+            const buffer = new TextEncoder("utf-8").encode(str);
+            const hash = await crypto.subtle.digest('SHA-1', buffer);
+            //const view = new DataView(hash);
+            //const hexCodes = view.map((d, i) => { view.getUint8(i).toString(16) });
+            const hexCodes = [];
+            const view = new DataView(hash);
+            for (let i = 0; i < view.byteLength; i += 1) {
+                const byte = view.getUint8(i).toString(16)
+                hexCodes.push(byte);
+            }
+            return '0x' + hexCodes.join('');
+        }
+
         let generatePassword = (len) => {
             let randomChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
             return Array.from(Array(len), () => randomChars.charAt(Math.floor(Math.random() * randomChars.length))).join('');
@@ -270,8 +284,8 @@
             return config;
         }
 
-        let getUser = async () => {
-            let data = await contract.methods.getUser().call();
+        let getUser = async (addr) => {
+            let data = await contract.methods.getUser(addr).call();
             return {
                 balance: new BN(data[0]),
                 betId: data[1],
@@ -280,8 +294,8 @@
             };
         }
 
-        let getBet = async () => {
-            let data = await contract.methods.getBet().call();
+        let getBet = async (betId) => {
+            let data = await contract.methods.getBet(betId).call();
             return {
                 isConfirmed: data[0],
                 addr1: data[1],

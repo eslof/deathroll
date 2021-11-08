@@ -47,9 +47,10 @@
         let isAddr1Begin;
         let isAddr1;
 
-        let contractAddr = '0x17d9AadB4F3D39199d30B3A8abfC5F79084A67f9';
-        let contractABI = JSON.parse('[{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"betId","type":"uint256"}],"name":"BetCancel","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"betId","type":"uint256"},{"indexed":false,"internalType":"address","name":"winner","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"BetComplete","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"betId","type":"uint256"},{"indexed":false,"internalType":"bool","name":"isAddr1Begin","type":"bool"}],"name":"BetConfirm","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"betId","type":"uint256"}],"name":"BetJoin","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"betId","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"BetOpen","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"betId","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"result","type":"uint256"}],"name":"RollComplete","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"denominator","type":"uint256"}],"name":"TaxSet","type":"event"},{"inputs":[{"internalType":"uint256","name":"betId","type":"uint256"}],"name":"cancelBet","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"cancelBet","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"betId","type":"uint256"},{"internalType":"bool","name":"isAddr1Winner","type":"bool"}],"name":"completeBet","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"betId","type":"uint256"},{"internalType":"uint256","name":"result","type":"uint256"}],"name":"completeRoll","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"betId","type":"uint256"}],"name":"confirmBet","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes20","name":"auth","type":"bytes20"},{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"bytes32","name":"pwdHash","type":"bytes32"}],"name":"createBet","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"uint256","name":"betId","type":"uint256"}],"name":"getBet","outputs":[{"components":[{"internalType":"bool","name":"isConfirmed","type":"bool"},{"internalType":"address","name":"addr1","type":"address"},{"internalType":"address","name":"addr2","type":"address"},{"internalType":"uint256","name":"balance","type":"uint256"},{"internalType":"uint256","name":"timestamp","type":"uint256"},{"internalType":"bytes32","name":"password","type":"bytes32"}],"internalType":"struct Bet","name":"","type":"tuple"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getBet","outputs":[{"components":[{"internalType":"bool","name":"isConfirmed","type":"bool"},{"internalType":"address","name":"addr1","type":"address"},{"internalType":"address","name":"addr2","type":"address"},{"internalType":"uint256","name":"balance","type":"uint256"},{"internalType":"uint256","name":"timestamp","type":"uint256"},{"internalType":"bytes32","name":"password","type":"bytes32"}],"internalType":"struct Bet","name":"","type":"tuple"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getConfig","outputs":[{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getContractBalance","outputs":[{"internalType":"int256","name":"","type":"int256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getTax","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"addr","type":"address"}],"name":"getUser","outputs":[{"components":[{"internalType":"uint256","name":"balance","type":"uint256"},{"internalType":"uint256","name":"betId","type":"uint256"},{"internalType":"uint256","name":"fromBlock","type":"uint256"},{"internalType":"uint256","name":"toBlock","type":"uint256"}],"internalType":"struct User","name":"","type":"tuple"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getUser","outputs":[{"components":[{"internalType":"uint256","name":"balance","type":"uint256"},{"internalType":"uint256","name":"betId","type":"uint256"},{"internalType":"uint256","name":"fromBlock","type":"uint256"},{"internalType":"uint256","name":"toBlock","type":"uint256"}],"internalType":"struct User","name":"","type":"tuple"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bytes20","name":"auth","type":"bytes20"},{"internalType":"uint256","name":"betId","type":"uint256"},{"internalType":"bytes32","name":"password","type":"bytes32"}],"name":"joinBet","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[],"name":"openBet","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"openBetRenew","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"resolveBet","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"min","type":"uint256"},{"internalType":"uint256","name":"max","type":"uint256"}],"name":"setBetLimits","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"denominator","type":"uint256"}],"name":"setTax","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"confirm","type":"uint256"},{"internalType":"uint256","name":"expire","type":"uint256"}],"name":"setTimeLimits","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"taxLimit","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},{"stateMutability":"payable","type":"receive"}]');
-        let emptyAddr = '0x0000000000000000000000000000000000000000';
+        const contractAddr = '0x17d9AadB4F3D39199d30B3A8abfC5F79084A67f9';
+        const contractABI = JSON.parse('[{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"betId","type":"uint256"}],"name":"BetCancel","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"betId","type":"uint256"},{"indexed":false,"internalType":"address","name":"winner","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"BetComplete","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"betId","type":"uint256"},{"indexed":false,"internalType":"bool","name":"isAddr1Begin","type":"bool"}],"name":"BetConfirm","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"betId","type":"uint256"}],"name":"BetJoin","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"betId","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"BetOpen","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"betId","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"result","type":"uint256"}],"name":"RollComplete","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"denominator","type":"uint256"}],"name":"TaxSet","type":"event"},{"inputs":[{"internalType":"uint256","name":"betId","type":"uint256"}],"name":"cancelBet","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"cancelBet","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"betId","type":"uint256"},{"internalType":"bool","name":"isAddr1Winner","type":"bool"}],"name":"completeBet","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"betId","type":"uint256"},{"internalType":"uint256","name":"result","type":"uint256"}],"name":"completeRoll","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"betId","type":"uint256"}],"name":"confirmBet","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes20","name":"auth","type":"bytes20"},{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"bytes32","name":"pwdHash","type":"bytes32"}],"name":"createBet","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"uint256","name":"betId","type":"uint256"}],"name":"getBet","outputs":[{"components":[{"internalType":"bool","name":"isConfirmed","type":"bool"},{"internalType":"address","name":"addr1","type":"address"},{"internalType":"address","name":"addr2","type":"address"},{"internalType":"uint256","name":"balance","type":"uint256"},{"internalType":"uint256","name":"timestamp","type":"uint256"},{"internalType":"bytes32","name":"password","type":"bytes32"}],"internalType":"struct Bet","name":"","type":"tuple"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getBet","outputs":[{"components":[{"internalType":"bool","name":"isConfirmed","type":"bool"},{"internalType":"address","name":"addr1","type":"address"},{"internalType":"address","name":"addr2","type":"address"},{"internalType":"uint256","name":"balance","type":"uint256"},{"internalType":"uint256","name":"timestamp","type":"uint256"},{"internalType":"bytes32","name":"password","type":"bytes32"}],"internalType":"struct Bet","name":"","type":"tuple"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getConfig","outputs":[{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getContractBalance","outputs":[{"internalType":"int256","name":"","type":"int256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getTax","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"addr","type":"address"}],"name":"getUser","outputs":[{"components":[{"internalType":"uint256","name":"balance","type":"uint256"},{"internalType":"uint256","name":"betId","type":"uint256"},{"internalType":"uint256","name":"fromBlock","type":"uint256"},{"internalType":"uint256","name":"toBlock","type":"uint256"}],"internalType":"struct User","name":"","type":"tuple"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getUser","outputs":[{"components":[{"internalType":"uint256","name":"balance","type":"uint256"},{"internalType":"uint256","name":"betId","type":"uint256"},{"internalType":"uint256","name":"fromBlock","type":"uint256"},{"internalType":"uint256","name":"toBlock","type":"uint256"}],"internalType":"struct User","name":"","type":"tuple"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bytes20","name":"auth","type":"bytes20"},{"internalType":"uint256","name":"betId","type":"uint256"},{"internalType":"bytes32","name":"password","type":"bytes32"}],"name":"joinBet","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[],"name":"openBet","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"openBetRenew","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"resolveBet","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"min","type":"uint256"},{"internalType":"uint256","name":"max","type":"uint256"}],"name":"setBetLimits","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"denominator","type":"uint256"}],"name":"setTax","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"confirm","type":"uint256"},{"internalType":"uint256","name":"expire","type":"uint256"}],"name":"setTimeLimits","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"taxLimit","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},{"stateMutability":"payable","type":"receive"}]');
+        const emptyAddr = '0x0000000000000000000000000000000000000000';
+        const emptyPassword = '0x0000000000000000000000000000000000000000000000000000000000000000';
 
         let contract;
         let web3;
@@ -81,12 +82,16 @@
         let playingAccount = null;
         let currentBet = null;
 
+        let currentAuth = null;
+        let currentToken = null;
+
         const lambdaConfirm = async (addr, authMsg) => {
             const resp = await postToLambda({ addr: addr, msg: authMsg, action: 'confirm' });
             if (!resp) { alert("XMLHttpRequest failed!"); return; }
             if ('errorMessage' in resp) { alert(resp.errorMessage); return; }
             if (!('token' in resp)) { alert(JSON.stringify(resp)); return; }
-            const token = resp.token;
+            currentToken = resp.token;
+            return true;
             // todo: save token to localStorage
         }
 
@@ -96,13 +101,15 @@
             const resp = await postToLambda({ token: token, action: 'roll' }); // todo: if no token in localStorage ^
             if (!resp) { alert("XMLHttpRequest failed!"); return; }
             if ('errorMessage' in resp) { alert(resp.errorMessage); return; }
+            return true;
             // todo: if ('token' in resp) { ...
         }
 
         const lambdaForceRoll = async (token) => {
-            const resp = await postToLambda({ token: token, action: 'roll' });
+            const resp = await postToLambda({ token: token, action: 'force' });
             if (!resp) { alert("XMLHttpRequest failed!"); return; }
             if ('errorMessage' in resp) { alert(resp.errorMessage); return; }
+            return true;
         }
 
         const postToLambda = async (data) => {
@@ -177,8 +184,8 @@
             });
 
             elCreateBetButton.addEventListener('click', async () => {
-                let amount = elCreateBetAmount.value;
-                let value = Math.floor(Number(amount));
+                const amount = elCreateBetAmount.value;
+                const value = Math.floor(Number(amount));
                 if (value === Infinity || String(value) !== amount || value <= 0) {
                     elCreateBetButton.disabled = elJoinBetButton.disabled = false;
                     elStateText.innerHTML = "Invalid bet value";
@@ -195,7 +202,7 @@
 
                     if (user.fromBlock.gt(user.toBlock)) return;
 
-                    let betValue = new BN(value);
+                    const betValue = new BN(value);
 
                     if (betValue.lt(config.betMin) || betValue.gt(config.betMax)) return;
 
@@ -203,12 +210,15 @@
                     // todo .. when you call in to auth you send secret in cleartext, we getBlock(user.fromBlock to find the transaction
                     // todo .. and then decode the params, then if the auth param decodes right you get a JWT based on bet.timestamp + config.expire
                     // todo - if you later don't have your JWT you get a msg to sign for a new one (aka if u switch to another device)
-                    if (user.balance.gte(betValue)) await contract.methods.createBet(betValue, web3.fromAscii("")).send();
-                    else await contract.methods.createBet(betValue, web3.fromAscii("")).send({ value: betValue.sub(user.balance) });
+
+                    currentAuth = generatePassword(8);
+                    // todo: generate password instead of emptyPassword
+                    if (user.balance.gte(betValue)) await contract.methods.createBet(await sha1(currentAuth), betValue.toString(), emptyPassword).send();
+                    else await contract.methods.createBet(await sha1(currentAuth), betValue.toString(), emptyPassword).send({ value: betValue.sub(user.balance).toString() });
 
                     user = await getUser(); //user.betId is updated here after await contract...
-                    let betId = user.betId;
-                    let fromBlock = user.fromBlock;
+                    const betId = user.betId;
+                    const fromBlock = user.fromBlock;
                     eventSubscription = contract.events.allEvents({ fromBlock: fromBlock, filter: { betId: betId } }, handleEvent);
                 } catch (e) {
                     playingAccount = contract.defaultAccount = null;
@@ -247,8 +257,10 @@
                     // todo: check if the password is correct first
                     let sendAmount = user.balance.gte(bet.balance) ? BN_ZERO : bet.balance.sub(user.balance);
                     let receipt;
-                    if (sendAmount.gt(BN_ZERO)) receipt = await contract.methods.joinBet(betId).send({value: sendAmount.toString()});
-                    else receipt = await contract.methods.joinBet(betId).send();
+
+                    currentAuth = generatePassword(8);
+                    if (sendAmount.gt(BN_ZERO)) receipt = await contract.methods.joinBet(await sha1(currentAuth), betId, emptyPassword).send({ value: sendAmount.toString() });
+                    else receipt = await contract.methods.joinBet(await sha1(currentAuth), betId, emptyPassword).send();
 
                     eventSubscription = contract.events.allEvents({ fromBlock: receipt.blockNumber, filter: { betId: betId } }, handleEvent);
                 } catch (e) {
@@ -262,8 +274,10 @@
             });
 
             elPlayerRollButton.addEventListener('click', async () => {
+                elPlayerRollButton.disabled = true;
                 elStateText.innerHTML = "Rolling... (to be continued)";
-                //todo: call lambda
+                const resp = await lambdaRoll(currentToken);
+                if (!resp) elStateText.innerHTML = "Unable to roll...";
             });
 
             try {
@@ -364,7 +378,8 @@
             switch (e.event) {
                 case 'BetJoin':
                     elStateText.innerHTML = "Waiting for opponent";
-                    //todo: check in with lambda + show ui waiting for confirmed
+                    const resp = await lambdaConfirm(playingAccount, currentAuth);
+                    if (!resp) return;// todo: retry?
                     break;
                 case 'BetConfirm':
                     rollCount = 0;
@@ -406,7 +421,7 @@
 
                     currentCeil = result;
 
-                    if (!isMyTurn) forceTurnTimeout = setTimeout(() => {}, 15000); //todo: call lambda
+                    if (!isMyTurn) forceTurnTimeout = setTimeout(() => { lambdaForceRoll(currentToken); }, 15000); //todo: call lambda
                     break;
                 case 'BetComplete':
                     rollCount++;

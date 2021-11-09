@@ -8,11 +8,12 @@ const getUserBetExpire = async (addr) => {
     const user = await layer.getUser(addr);
     if (user.fromBlock.lte(user.toBlock)) throw new GameException("Bet missing.");
 
-    const { config, latestBlock, bet } = await Promise.all([
+    const [ config, latestBlock, bet ] = await Promise.all([
         layer.getConfig(),
         layer.web3.eth.getBlock('latest'),
         layer.getBet(user.betId)
     ]);
+
     if (bet.addr2 === emptyAddr) throw new GameException("Bet pending.");
     const expireSeconds = config.expireTime - (latestBlock.timestamp - bet.timestamp);
     if (expireSeconds <= 0) throw new GameException("Bet expired.");

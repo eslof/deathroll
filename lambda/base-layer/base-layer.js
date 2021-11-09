@@ -87,9 +87,13 @@ exports.sha1 = async (str) => {
 
 //        return (betMax, betMin, confirmTime, expireTime);
 exports.getConfig = async () => {
-    let config = {};
-    [config.betMax, config.betMin, config.confirmTime, config.expireTime] = Object.values(await contract.methods.getConfig().call()).map(new BN);
-    return config;
+    let data = await contract.methods.getConfig().call();
+    return {
+        betMax: new BN(data[0]),
+        betMin: new BN(data[1]),
+        confirmTime: new BN(data[2]),
+        expireTime: new BN(data[3])
+    };
 }
 
 exports.getBet = async (betId) => {

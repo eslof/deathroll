@@ -403,6 +403,11 @@
                         elStateText.innerHTML = "Forcing opponent roll.";
                         lambdaForceRoll(currentToken);
                     }, 15000);
+                    else forceTurnTimeout = setTimeout(() => {
+                        elPlayerRollButton.disabled = true;
+                        elStateText.innerHTML = "Forcing your roll.";
+                        lambdaRoll(currentToken);
+                    }, 15000);
                     break;
                     //1 % 2 = 1
                     //2 % 2 = 0
@@ -432,8 +437,14 @@
                         elStateText.innerHTML = "Forcing opponent roll.";
                         lambdaForceRoll(currentToken);
                         }, 15000);
+                    else forceTurnTimeout = setTimeout(() => {
+                        elPlayerRollButton.disabled = true;
+                        elStateText.innerHTML = "Forcing your roll.";
+                        lambdaRoll(currentToken);
+                    }, 15000);
                     break;
                 case 'BetComplete':
+                    if (forceTurnTimeout && !forceTurnTimeout.cleared) clearTimeout(forceTurnTimeout);
                     rollCount++;
                     isMyTurn = isAddr1 && rollCount % 2 === isAddr1Begin ? 0 : 1;
                     const isMyWin = e.returnValues.winner === playingAccount;
@@ -443,6 +454,7 @@
                     await eventSubscription.unsubscribe();
                     break;
                 case 'BetCancel':
+                    if (forceTurnTimeout && !forceTurnTimeout.cleared) clearTimeout(forceTurnTimeout);
                     elStateText.innerHTML = "Bet canceled";
                     playingAccount = null;
                     await eventSubscription.unsubscribe();

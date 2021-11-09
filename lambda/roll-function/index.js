@@ -1,4 +1,4 @@
-const layer = require('base-layer');
+const layer = require('/opt/base-layer');
 const GameException = layer.GameException;
 const roll = require('roll');
 const confirm = require('confirm');
@@ -8,7 +8,7 @@ exports.handler = async (event) => {
     let ret = {};
 
     try {
-        const [ msg, addr, user, bet, config, bcDeltaTime, token ] = auth(event);
+        const [ msg, addr, user, bet, config, bcDeltaTime, token ] = await auth(event);
         if (msg) return { 'msg': msg }; // To be signed for auth
 
         else if (!('action' in event)) return { error: "No action specified." };

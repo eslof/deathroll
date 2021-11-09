@@ -1,4 +1,4 @@
-const layer = require('base-layer');
+const layer = require('/opt/base-layer');
 const emptyAddr = '0x0000000000000000000000000000000000000000';
 const jwt = layer.jwt;
 const GameException = layer.GameException;
@@ -123,5 +123,5 @@ module.exports = async (event) => {
     if (layer.isAuthCooldown(event.addr)) throw new GameException("Auth msg requests once per 10 seconds.");
     const authMsg = generateAuth();
     await layer.setAuthMsg(event.addr, authMsg, (bet.timestamp + config.expireTime) + bcDeltaTime);
-    return authMsg; // todo: use in-memory db for this also?
+    return [authMsg, null, null, null, null, null, null]; // todo: use in-memory db for this also?
 };

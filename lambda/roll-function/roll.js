@@ -1,4 +1,4 @@
-const layer = require('base-layer');
+const layer = require('/opt/base-layer');
 const GameException = layer.GameException;
 const LOG_TWO = Math.log(2);
 

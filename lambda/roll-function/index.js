@@ -26,7 +26,7 @@ exports.handler = async (event) => {
                 break;
         }
 
-    } catch (e) { ret.error = e.message; }
+    } catch (e) { ret.errorMessage = e.message; }
 
     if (ret !== {}) return ret;
 };

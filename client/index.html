@@ -133,6 +133,7 @@
         }
 
         const init = async () => {
+
             if (!window.ethereum) return;
 
             elRollParent = document.getElementById('roll-text-div');
@@ -155,9 +156,9 @@
                     currentChainId = await web3.eth.getChainId();
                     if (currentChainId !== polygonMumbaiChainId) await ethereum.request({ method: 'wallet_switchEthereumChain', params:[{chainId: web3.utils.numberToHex(polygonMumbaiChainId)}]});
                     contract.defaultAccount = currentAccount;
-                    user = await getUser();
-                    config = await getConfig();
                     playingAccount = currentAccount;
+                    user = await getUser(playingAccount);
+                    config = await getConfig();
                 } catch (e) {
                     playingAccount = contract.defaultAccount = null;
                     elStateText.innerHTML = "Please connect your mumbai address";
@@ -178,8 +179,8 @@
             });
 
             elActivateButton.addEventListener('click', () => {
-                elJoinBetButton.disabled = elCreateBetButton.disabled = false;
                 elActivateButton.disabled = true;
+                elJoinBetButton.disabled = elCreateBetButton.disabled = false;
             });
 
             elCreateBetButton.addEventListener('click', async () => {
@@ -373,9 +374,16 @@
         event BetComplete(uint indexed betId, address indexed winner, uint betValue);
         */
 
+        const getStartingCeil = (bet) => {
+            let betAmount = new BN(web3.utils.fromWei(bet.addr2 === emptyAddr ? bet.balance : bet.balance.div(BN_TWO)));
+            // todo: get IRL value to determine ceil as 1 token might be 1 cent or 1 billion dollars at any given moment
+            //bet sanity might not be necessary here just makes sure bet * 10 doesn't go over uint256 but maybe with BN library it doesn't matter so idk
+            return (betAmount.gte(BN_BET_SANITY) ? BN_CEIL_MAX : BN.max(BN_CEIL_MIN, BN.min(betAmount.mul(BN_TEN), BN_CEIL_MAX))).toString();
+        };
+
         let forceTurnTimeout;
 
-        let handleEvent = async (e) => {
+        const handleEvent = async (e) => {
             let isMyTurn;
             let ceil;
             switch (e.event) {
@@ -387,8 +395,7 @@
                 case 'BetConfirm':
                     rollCount = 0;
                     const bet = await getBet();
-                    const betAmount = bet.balance.div(2);
-                    currentCeil = betAmount.gte(BN_BET_SANITY) ? BN_CEIL_MAX : BN.max(BN_CEIL_MIN, BN.min(betAmount.mul(BN_TEN), BN_CEIL_MAX));
+                    currentCeil = getStartingCeil(bet);
                     isAddr1Begin = e.returnValues.isAddr1Begin;
 
                     isMyTurn = isAddr1 ? isAddr1Begin : !isAddr1Begin;
@@ -462,7 +469,7 @@
             updateActivateButton();
         }
 
-        let updateActivateButton = () => { //todo: fix ui
+        const updateActivateButton = () => { //todo: fix ui
             const isCorrectChain = currentChainId === polygonMumbaiChainId;
             const isPlaying = playingAccount !== null;
             elActivateButton.disabled = !isCorrectChain && !isPlaying;
@@ -470,12 +477,12 @@
         }
 
         //for handling invite links
-        let parseLink = () => {
+        const parseLink = () => {
             if (location.pathname !== '/') if (tryParsePath(location.pathname)) return;
             if (location.search !== '?' || location.search !== '') tryParseSearch(location.search); //todo: search more widely supported by CDN
         }
 
-        let tryParseSearch = (search) => {
+        const tryParseSearch = (search) => {
             const params = search.substring(1).split('-');
             if (1 > params.length > 2 || params[0] === '') return false;
             const betId = Math.floor(Number(params[0]));
@@ -486,7 +493,7 @@
             return true;
         }
 
-        let tryParsePath = (path) => {
+        const tryParsePath = (path) => {
             const params = document.location.search.charAt(0) === '/' ? path.substring(1).split('-') : path.split('-');
             if (params.length < 1 || params[0] === '') return false;
             const match = Math.floor(Number(params[0]));

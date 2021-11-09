@@ -47,7 +47,7 @@ const BN_BET_SANITY = new BN(256).pow(BN_TWO).div(BN_TEN);
 const BN_CEIL_MIN = BN_HUNDRED;
 const BN_CEIL_MAX = BN_TEN_THOUSAND;
 
-exports.getCeil = (bet) => {
+exports.getStartingCeil = (bet) => {
     let betAmount = new BN(exports.web3.utils.fromWei(bet.addr2 === emptyAddr ? bet.balance : bet.balance.div(BN_TWO)));
     // todo: get IRL value to determine ceil as 1 token might be 1 cent or 1 billion dollars at any given moment
     //bet sanity might not be necessary here just makes sure bet * 10 doesn't go over uint256 but maybe with BN library it doesn't matter so idk

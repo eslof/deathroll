@@ -10,7 +10,7 @@ module.exports = async (addr, user, bet, config, bcDeltaTime) => {
     let isAddr1 = addr === bet.addr1;
 
     if (Object.keys(betRow).length === 0) { //row not initialized, should really check if row is empty, possibly !row is enough, gotta test
-        await layer.initBetRow(betId, addr, isAddr1, layer.getCeil(bet), (bet.timestamp + config.expireTime) + bcDeltaTime);
+        await layer.initBetRow(betId, addr, isAddr1, layer.getStartingCeil(bet), (bet.timestamp + config.expireTime) + bcDeltaTime);
     } else if (!betRow.hasOwnProperty(isAddr1 ? 'addr1' : 'addr2')) {
         const receipt = await layer.contract.methods.confirmBet(betId).send();
         const isAddr1Begin = receipt.events.BetConfirm.returnValues.isAddr1Begin;

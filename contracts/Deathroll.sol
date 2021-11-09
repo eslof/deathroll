@@ -77,7 +77,7 @@ contract Deathroll is Config {
         return int(address(this).balance) - int(totalUserBalance); }
 
     function coinFlip() private view returns (bool) {
-        return uint8(uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty, gasleft(), totalUserBalance, owner().balance))) % 256) > 127;
+        return uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty, gasleft(), totalUserBalance, owner().balance))) % 1024 > 511;
     }
 
     // Requirements

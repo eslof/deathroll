@@ -33,10 +33,10 @@
         let elStateText;
         let elCreateBetButton;
         let elCreateBetAmount;
-        //let elCreateBetPassword = null
+        //let elCreateBetPassword
         let elJoinBetButton;
         let elJoinBetId;
-        //let elJoinBetPassword = null;
+        //let elJoinBetPassword;
         let elActivateButton;
         let elAddressText;
         let elPlayerRollButton;
@@ -76,8 +76,8 @@
 
         let eventSubscription = null;
 
-        let currentChainId;
-        let currentAccount;
+        let currentChainId = null;
+        let currentAccount = null;
 
         let playingAccount = null;
         let currentBet = null;
@@ -233,8 +233,8 @@
 
 
             elJoinBetButton.addEventListener('click', async () => {
-                let betIdInput = elJoinBetId.value;
-                let betId = Math.floor(Number(betIdInput)); //making sure it's a number and sane
+                const betIdInput = elJoinBetId.value;
+                const betId = Math.floor(Number(betIdInput)); //making sure it's a number and sane
                 if (betId === Infinity || String(betId) !== betIdInput || betId <= 0) {
                     elStateText.innerHTML = "Invalid Bet ID";
                     elCreateBetButton.disabled = elJoinBetButton.disabled = false;
@@ -247,11 +247,11 @@
                     playingAccount = currentAccount; //maybe put this last aka if everything succeeded
                     contract.defaultAccount = playingAccount;
 
-                    let user = await getUser();
+                    const user = await getUser();
 
                     if (user.fromBlock.gt(user.toBlock)) return; // todo: already in a match, init with user.betId
-                    let bet = await getBet(betId);
-                    let bcTimestamp = (await web3.eth.getBlock('latest')).timestamp;
+                    const bet = await getBet(betId);
+                    const bcTimestamp = (await web3.eth.getBlock('latest')).timestamp;
                     if (bcTimestamp > bet.timestamp + (await getConfig()).expireTime) return; //is expired
 
                     // todo: check if the password is correct first
@@ -284,7 +284,7 @@
                 //todo: we do something like this to handle reconnect
                 // here we're getting caught up to date
                 if (user.fromBlock.gt(user.toBlock)) {
-                    let events = await getPastEvents(user.betId, user.fromBlock, user.toBlock);
+                    const events = await getPastEvents(user.betId, user.fromBlock, user.toBlock);
                     events.map(handleEvent); //this just fires handleEvent with item as arg for every item
                 }
             } catch (e) {
@@ -294,7 +294,7 @@
             updateActivateButton();
         }
 
-        async function sha1(str) {
+        const sha1 = async (str) => {
             const buffer = new TextEncoder("utf-8").encode(str);
             const hash = await crypto.subtle.digest('SHA-1', buffer);
             //const view = new DataView(hash);
@@ -308,13 +308,13 @@
             return '0x' + hexCodes.join('');
         }
 
-        let generatePassword = (len) => {
-            let randomChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        const randomChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        const generatePassword = (len) => {
             return Array.from(Array(len), () => randomChars.charAt(Math.floor(Math.random() * randomChars.length))).join('');
         }
 
-        let getPastEvents = async (betId, fromBlock, toBlock, batchLimit) => {
-            let events = [];
+        const getPastEvents = async (betId, fromBlock, toBlock, batchLimit) => {
+            const events = [];
             let blockTarget = Math.min(toBlock, fromBlock + batchLimit);
             while (fromBlock < blockTarget) {
                 Array.prototype.push.apply(events, (
@@ -328,14 +328,18 @@
             return events;
         };
 
-        let getConfig = async () => {
-            let config = {};
-            [config.betMax, config.betMin, config.confirmTime, config.expireTime] = (await contract.methods.getConfig().call()).map(new BN);
-            return config;
+        const getConfig = async () => {
+            let data = await contract.methods.getConfig().call();
+            return {
+                betMax: new BN(data[0]),
+                betMin: new BN(data[1]),
+                confirmTime: new BN(data[2]),
+                expireTime: new BN(data[3])
+            };
         }
 
-        let getUser = async (addr) => {
-            let data = await contract.methods.getUser(addr).call();
+        const getUser = async (addr) => {
+            const data = await contract.methods.getUser(addr).call();
             return {
                 balance: new BN(data[0]),
                 betId: data[1],
@@ -344,8 +348,8 @@
             };
         }
 
-        let getBet = async (betId) => {
-            let data = await contract.methods.getBet(betId).call();
+        const getBet = async (betId) => {
+            const data = await contract.methods.getBet(betId).call();
             return {
                 isConfirmed: data[0],
                 addr1: data[1],
@@ -356,7 +360,7 @@
             };
         }
 
-        let updateRollTextOpacity = () => {
+        const updateRollTextOpacity = () => {
             for (let i = 0; i < rolls.length; i++) {
                 rolls[i].styles.opacity = `${100-(i*10)}%`;
             }
@@ -383,8 +387,8 @@
                     break;
                 case 'BetConfirm':
                     rollCount = 0;
-                    let bet = await getBet();
-                    let betAmount = bet.balance.div(2);
+                    const bet = await getBet();
+                    const betAmount = bet.balance.div(2);
                     currentCeil = betAmount.gte(BN_BET_SANITY) ? BN_CEIL_MAX : BN.max(BN_CEIL_MIN, BN.min(betAmount.mul(BN_TEN), BN_CEIL_MAX));
                     isAddr1Begin = e.returnValues.isAddr1Begin;
 
@@ -406,16 +410,16 @@
                     if (forceTurnTimeout && !forceTurnTimeout.cleared) clearTimeout(forceTurnTimeout);
 
                     rollCount++;
-                    let result = e.returnValues.rollResult;
-                    let isAddr1Turn = rollCount % 2 === isAddr1Begin ? 0 : 1;
+                    const result = e.returnValues.rollResult;
+                    const isAddr1Turn = rollCount % 2 === isAddr1Begin ? 0 : 1;
                     isMyTurn = isAddr1 ? isAddr1Turn : !isAddr1Turn;
                     elPlayerRollButton.innerHTML = isMyTurn ? `Roll 0-${result}` : 'Waiting';
                     elOpponentRollButton.innerHTML = isMyTurn ? 'Waiting' : `Roll 0-${result}`;
                     elPlayerRollButton.disabled = !isMyTurn;
 
                     elStateText.innerHTML = isMyTurn ? "Your turn" : "";
-                    let p = document.createElement('p');
-                    let txt = document.createTextNode(`${!isMyTurn ? 'You' : 'They'} roll ${result} (0-${currentCeil})`);
+                    const p = document.createElement('p');
+                    const txt = document.createTextNode(`${!isMyTurn ? 'You' : 'They'} roll ${result} (0-${currentCeil})`);
                     p.style.color = !isMyTurn ? '#6991de' : '#c722b8';
                     p.style.width = '100%';
                     p.appendChild(txt);
@@ -432,7 +436,7 @@
                 case 'BetComplete':
                     rollCount++;
                     isMyTurn = isAddr1 && rollCount % 2 === isAddr1Begin ? 0 : 1;
-                    let isMyWin = e.returnValues.winner === playingAccount;
+                    const isMyWin = e.returnValues.winner === playingAccount;
                     //todo: we know if it was expired resolve coinflip if we compare e.timestamp here to e.timestamp from BetConfirm
                     elStateText.innerHTML = isMyWin ? "You win!" : "You lose";
                     playingAccount = null;
@@ -448,8 +452,8 @@
         }
 
         let updateActivateButton = () => { //todo: fix ui
-            let isCorrectChain = currentChainId === polygonMumbaiChainId;
-            let isPlaying = playingAccount !== null;
+            const isCorrectChain = currentChainId === polygonMumbaiChainId;
+            const isPlaying = playingAccount !== null;
             elActivateButton.disabled = !isCorrectChain && !isPlaying;
             if (!isPlaying) elStateText.innerHTML = !isCorrectChain ? "Connect your Mumbai address" : "";
         }
@@ -461,9 +465,9 @@
         }
 
         let tryParseSearch = (search) => {
-            let params = search.substring(1).split('-');
+            const params = search.substring(1).split('-');
             if (1 > params.length > 2 || params[0] === '') return false;
-            let betId = Math.floor(Number(params[0]));
+            const betId = Math.floor(Number(params[0]));
             if (betId === Infinity || String(betId) !== params[0] || betId <= 0) return false;
             elJoinBetId.value = params[0];
             //if (params.length < 2 || params[1] === '' || !params[1].match("^[A-Za-z0-9]+$")) return false;
@@ -472,9 +476,9 @@
         }
 
         let tryParsePath = (path) => {
-            let params = document.location.search.charAt(0) === '/' ? path.substring(1).split('-') : path.split('-');
+            const params = document.location.search.charAt(0) === '/' ? path.substring(1).split('-') : path.split('-');
             if (params.length < 1 || params[0] === '') return false;
-            let match = Math.floor(Number(params[0]));
+            const match = Math.floor(Number(params[0]));
             if (match === Infinity || String(match) !== params[0] || match < 1) return false;
             elJoinBetId.value = params[0];
             //if (params.length < 2 || params[1] === '' || !params[1].match("^[A-Za-z0-9]+$")) return false;

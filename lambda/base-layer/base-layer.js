@@ -1,5 +1,7 @@
 const Web3 = require('web3');
 const AWS = require('aws-sdk');
+const ABI = require('abi');
+
 exports.bufferToHex = require('ethereumjs-util').bufferToHex;
 exports.recoverPersonalSignature = require('eth-sig-util').recoverPersonalSignature;
 exports.jwt = require('jsonwebtoken');
@@ -8,36 +10,15 @@ exports.kms = new AWS.KMS();
 
 const projectId = '001d284c03cc464a9888777474bdb849';
 const url = `https://polygon-mumbai.infura.io/v3/${projectId}`;
-
 const web3 = new Web3(new Web3.providers.HttpProvider(url));
 exports.web3 = web3;
-
+exports.JWT_SECRET = "71618263a703ee11e8ee343b20d074a5c4e816802c18b9a3fcdb34774950efdbaed9d31cd10b5af62abc6fb1bb285266780013d4cd210fd623713d4574900a4fa3b8248088e86f017ad34c77faafe3fe4943c2fa5b7ebda502b683fbb32d45d75b4cb21038749063dce688b15b9d962b60a3da58d1d314352aff87e3cfc98a4e";
 const adminAddr = '0xdC4574AD472aeB5453e0999461D9f89aDCF11599';
 const adminPrivateKey = 'c3459facae9802177a4ba740e3c16ac2958c19dfe05f21f0b689bb4870fb91b5';
-//const gasPrice = '35000000000';
-//const gas = '6000000'; // limit
-
+const contractAddress = '0x17d9AadB4F3D39199d30B3A8abfC5F79084A67f9';
 const tableName = 'deathroll';
-
-exports.contractAddress = '0x17d9AadB4F3D39199d30B3A8abfC5F79084A67f9';
-
-exports.ABI = JSON.parse('[{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"betId","type":"uint256"}],"name":"BetCancel","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"betId","type":"uint256"},{"indexed":false,"internalType":"address","name":"winner","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"BetComplete","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"betId","type":"uint256"},{"indexed":false,"internalType":"bool","name":"isAddr1Begin","type":"bool"}],"name":"BetConfirm","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"betId","type":"uint256"}],"name":"BetJoin","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"betId","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"BetOpen","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"betId","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"result","type":"uint256"}],"name":"RollComplete","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"denominator","type":"uint256"}],"name":"TaxSet","type":"event"},{"inputs":[{"internalType":"uint256","name":"betId","type":"uint256"}],"name":"cancelBet","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"cancelBet","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"betId","type":"uint256"},{"internalType":"bool","name":"isAddr1Winner","type":"bool"}],"name":"completeBet","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"betId","type":"uint256"},{"internalType":"uint256","name":"result","type":"uint256"}],"name":"completeRoll","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"betId","type":"uint256"}],"name":"confirmBet","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes20","name":"auth","type":"bytes20"},{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"bytes32","name":"pwdHash","type":"bytes32"}],"name":"createBet","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"uint256","name":"betId","type":"uint256"}],"name":"getBet","outputs":[{"components":[{"internalType":"bool","name":"isConfirmed","type":"bool"},{"internalType":"address","name":"addr1","type":"address"},{"internalType":"address","name":"addr2","type":"address"},{"internalType":"uint256","name":"balance","type":"uint256"},{"internalType":"uint256","name":"timestamp","type":"uint256"},{"internalType":"bytes32","name":"password","type":"bytes32"}],"internalType":"struct Bet","name":"","type":"tuple"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getBet","outputs":[{"components":[{"internalType":"bool","name":"isConfirmed","type":"bool"},{"internalType":"address","name":"addr1","type":"address"},{"internalType":"address","name":"addr2","type":"address"},{"internalType":"uint256","name":"balance","type":"uint256"},{"internalType":"uint256","name":"timestamp","type":"uint256"},{"internalType":"bytes32","name":"password","type":"bytes32"}],"internalType":"struct Bet","name":"","type":"tuple"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getConfig","outputs":[{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getContractBalance","outputs":[{"internalType":"int256","name":"","type":"int256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getTax","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"addr","type":"address"}],"name":"getUser","outputs":[{"components":[{"internalType":"uint256","name":"balance","type":"uint256"},{"internalType":"uint256","name":"betId","type":"uint256"},{"internalType":"uint256","name":"fromBlock","type":"uint256"},{"internalType":"uint256","name":"toBlock","type":"uint256"}],"internalType":"struct User","name":"","type":"tuple"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getUser","outputs":[{"components":[{"internalType":"uint256","name":"balance","type":"uint256"},{"internalType":"uint256","name":"betId","type":"uint256"},{"internalType":"uint256","name":"fromBlock","type":"uint256"},{"internalType":"uint256","name":"toBlock","type":"uint256"}],"internalType":"struct User","name":"","type":"tuple"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bytes20","name":"auth","type":"bytes20"},{"internalType":"uint256","name":"betId","type":"uint256"},{"internalType":"bytes32","name":"password","type":"bytes32"}],"name":"joinBet","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[],"name":"openBet","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"openBetRenew","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"resolveBet","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"min","type":"uint256"},{"internalType":"uint256","name":"max","type":"uint256"}],"name":"setBetLimits","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"denominator","type":"uint256"}],"name":"setTax","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"confirm","type":"uint256"},{"internalType":"uint256","name":"expire","type":"uint256"}],"name":"setTimeLimits","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"taxLimit","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},{"stateMutability":"payable","type":"receive"}]');
-
-web3.eth.accounts.wallet.add(adminPrivateKey);
-
-const contract = new web3.eth.Contract(exports.ABI, exports.contractAddress, {
-    from: adminAddr
-});
-exports.contract = contract;
-
 const authRowPrefix = "AUTH#";
 const betRowPrefix = "BET#";
-
-exports.JWT_SECRET = "71618263a703ee11e8ee343b20d074a5c4e816802c18b9a3fcdb34774950efdbaed9d31cd10b5af62abc6fb1bb285266780013d4cd210fd623713d4574900a4fa3b8248088e86f017ad34c77faafe3fe4943c2fa5b7ebda502b683fbb32d45d75b4cb21038749063dce688b15b9d962b60a3da58d1d314352aff87e3cfc98a4e";
-
-const authCooldownSeconds = 10;
-const authCooldown = [];
-
 const BN = web3.utils.BN;
 const BN_TWO = new BN(2);
 const BN_TEN = new BN(10);
@@ -46,6 +27,17 @@ const BN_TEN_THOUSAND = new BN(10000);
 const BN_BET_SANITY = new BN(256).pow(BN_TWO).div(BN_TEN);
 const BN_CEIL_MIN = BN_HUNDRED;
 const BN_CEIL_MAX = BN_TEN_THOUSAND;
+
+const authCooldownSeconds = 10;
+const authCooldown = [];
+
+web3.eth.accounts.wallet.add(adminPrivateKey);
+
+const contract = new web3.eth.Contract(ABI, contractAddress, {
+    from: adminAddr
+});
+
+exports.contract = contract;
 
 exports.getStartingCeil = (bet) => {
     let betAmount = new BN(exports.web3.utils.fromWei(bet.addr2 === emptyAddr ? bet.balance : bet.balance.div(BN_TWO)));

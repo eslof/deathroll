@@ -26,6 +26,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js/dist/web3.min.js"></script>
+    <script src="js/abi.js"></script>
     <script>
         let rolls = [];
         let elRollParent;
@@ -40,6 +41,7 @@
         let elAddressText;
         let elPlayerRollButton;
         let elOpponentRollButton;
+        let elCancelButton;
 
         let currentCeil;
         let rollCount;
@@ -47,7 +49,7 @@
         let isAddr1;
 
         const contractAddr = '0x17d9AadB4F3D39199d30B3A8abfC5F79084A67f9';
-        const contractABI = JSON.parse('[{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"betId","type":"uint256"}],"name":"BetCancel","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"betId","type":"uint256"},{"indexed":false,"internalType":"address","name":"winner","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"BetComplete","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"betId","type":"uint256"},{"indexed":false,"internalType":"bool","name":"isAddr1Begin","type":"bool"}],"name":"BetConfirm","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"betId","type":"uint256"}],"name":"BetJoin","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"betId","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"BetOpen","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"betId","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"result","type":"uint256"}],"name":"RollComplete","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"denominator","type":"uint256"}],"name":"TaxSet","type":"event"},{"inputs":[{"internalType":"uint256","name":"betId","type":"uint256"}],"name":"cancelBet","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"cancelBet","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"betId","type":"uint256"},{"internalType":"bool","name":"isAddr1Winner","type":"bool"}],"name":"completeBet","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"betId","type":"uint256"},{"internalType":"uint256","name":"result","type":"uint256"}],"name":"completeRoll","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"betId","type":"uint256"}],"name":"confirmBet","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes20","name":"auth","type":"bytes20"},{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"bytes32","name":"pwdHash","type":"bytes32"}],"name":"createBet","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"uint256","name":"betId","type":"uint256"}],"name":"getBet","outputs":[{"components":[{"internalType":"bool","name":"isConfirmed","type":"bool"},{"internalType":"address","name":"addr1","type":"address"},{"internalType":"address","name":"addr2","type":"address"},{"internalType":"uint256","name":"balance","type":"uint256"},{"internalType":"uint256","name":"timestamp","type":"uint256"},{"internalType":"bytes32","name":"password","type":"bytes32"}],"internalType":"struct Bet","name":"","type":"tuple"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getBet","outputs":[{"components":[{"internalType":"bool","name":"isConfirmed","type":"bool"},{"internalType":"address","name":"addr1","type":"address"},{"internalType":"address","name":"addr2","type":"address"},{"internalType":"uint256","name":"balance","type":"uint256"},{"internalType":"uint256","name":"timestamp","type":"uint256"},{"internalType":"bytes32","name":"password","type":"bytes32"}],"internalType":"struct Bet","name":"","type":"tuple"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getConfig","outputs":[{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getContractBalance","outputs":[{"internalType":"int256","name":"","type":"int256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getTax","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"addr","type":"address"}],"name":"getUser","outputs":[{"components":[{"internalType":"uint256","name":"balance","type":"uint256"},{"internalType":"uint256","name":"betId","type":"uint256"},{"internalType":"uint256","name":"fromBlock","type":"uint256"},{"internalType":"uint256","name":"toBlock","type":"uint256"}],"internalType":"struct User","name":"","type":"tuple"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getUser","outputs":[{"components":[{"internalType":"uint256","name":"balance","type":"uint256"},{"internalType":"uint256","name":"betId","type":"uint256"},{"internalType":"uint256","name":"fromBlock","type":"uint256"},{"internalType":"uint256","name":"toBlock","type":"uint256"}],"internalType":"struct User","name":"","type":"tuple"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bytes20","name":"auth","type":"bytes20"},{"internalType":"uint256","name":"betId","type":"uint256"},{"internalType":"bytes32","name":"password","type":"bytes32"}],"name":"joinBet","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[],"name":"openBet","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"openBetRenew","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"resolveBet","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"min","type":"uint256"},{"internalType":"uint256","name":"max","type":"uint256"}],"name":"setBetLimits","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"denominator","type":"uint256"}],"name":"setTax","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"confirm","type":"uint256"},{"internalType":"uint256","name":"expire","type":"uint256"}],"name":"setTimeLimits","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"taxLimit","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},{"stateMutability":"payable","type":"receive"}]');
+        const contractABI = ABI;
         const emptyAddr = '0x0000000000000000000000000000000000000000';
         const emptyPassword = '0x0000000000000000000000000000000000000000000000000000000000000000';
 
@@ -80,6 +82,7 @@
 
         let playingAccount = null;
         let currentBet = null;
+        let currentConfig = null;
 
         let currentAuth = null;
         let currentToken = null;
@@ -89,6 +92,7 @@
             if (!resp) { alert("XMLHttpRequest failed!"); return; }
             if ('errorMessage' in resp) { alert(resp.errorMessage); return; }
             if (!('token' in resp)) { alert(JSON.stringify(resp)); return; }
+            console.log(resp);
             currentToken = resp.token;
             return true;
             // todo: save token to localStorage
@@ -100,6 +104,7 @@
             const resp = await postToLambda({ token: token, action: 'roll' }); // todo: if no token in localStorage ^
             if (!resp) { alert("XMLHttpRequest failed!"); return; }
             if ('errorMessage' in resp) { alert(resp.errorMessage); return; }
+            console.log(resp);
             return true;
             // todo: if ('token' in resp) { ...
         }
@@ -108,6 +113,7 @@
             const resp = await postToLambda({ token: token, action: 'force' });
             if (!resp) { alert("XMLHttpRequest failed!"); return; }
             if ('errorMessage' in resp) { alert(resp.errorMessage); return; }
+            console.log(resp);
             return true;
         }
 
@@ -121,6 +127,7 @@
                     if (xhr.readyState === XMLHttpRequest.DONE) {
                         const status = xhr.status;
                         if (status === 0 || (status >= 200 && status < 400)) {
+                            console.log(xhr.responseText);
                             resolve(JSON.parse(xhr.responseText));
                         } else {
                             console.log(xhr.responseText);
@@ -130,6 +137,10 @@
                 };
                 xhr.send(JSON.stringify(data));
             });
+        }
+
+        const fromPlayingAccount = () => {
+            return { from: playingAccount };
         }
 
         const init = async () => {
@@ -146,21 +157,21 @@
             elPlayerRollButton = document.getElementById('player-roll-button');
             elOpponentRollButton = document.getElementById('opponent-roll-button');
             elJoinBetId = document.getElementById('join-bet-id');
+            elCancelButton = document.getElementById('cancel-button');
             //elJoinBetPassword = document.getElementById('join-bet-password');
 
             let user;
-            let config;
-            while (!currentAccount || !currentChainId || currentChainId !== polygonMumbaiChainId || !user || !config) {
+            while (!currentAccount || !currentChainId || currentChainId !== polygonMumbaiChainId || !user || !currentConfig || !contract) {
                 try {
                     currentAccount = (await web3.eth.requestAccounts())[0];
                     currentChainId = await web3.eth.getChainId();
                     if (currentChainId !== polygonMumbaiChainId) await ethereum.request({ method: 'wallet_switchEthereumChain', params:[{chainId: web3.utils.numberToHex(polygonMumbaiChainId)}]});
-                    contract.defaultAccount = currentAccount;
                     playingAccount = currentAccount;
-                    user = await getUser(playingAccount);
-                    config = await getConfig();
+                    elAddressText.innerText = currentAccount;
+                    user = await getUser();
+                    await updateConfig();
+                    console.log(user.betId);
                 } catch (e) {
-                    playingAccount = contract.defaultAccount = null;
                     elStateText.innerHTML = "Please connect your mumbai address";
                     //user canceled or doesn't have metamask/web3
                 }
@@ -179,14 +190,24 @@
             });
 
             elActivateButton.addEventListener('click', () => {
+                playingAccount = currentAccount;
                 elActivateButton.disabled = true;
                 elJoinBetButton.disabled = elCreateBetButton.disabled = false;
             });
 
+            elCancelButton.addEventListener('click', async () => {
+                //let user = await getUser();
+                //if (user.fromBlock.lte(user.toBlock)) throw new Error("Not in bet");
+                try {let resp = await contract.methods.cancelBet().send(fromPlayingAccount());
+                    console.log(JSON.stringify(resp) + "hi");
+                } catch (e) {console.log(e);}
+            });
+
             elCreateBetButton.addEventListener('click', async () => {
                 const amount = elCreateBetAmount.value;
-                const value = Math.floor(Number(amount));
-                if (value === Infinity || String(value) !== amount || value <= 0) {
+                const value = Math.round(parseFloat(amount) * 10) / 10;
+                console.log(value);
+                if (value === Infinity || String(value) !== amount || value < 1) {
                     elCreateBetButton.disabled = elJoinBetButton.disabled = false;
                     elStateText.innerHTML = "Invalid bet value";
                     return;
@@ -196,27 +217,27 @@
 
                 try {
                     playingAccount = currentAccount;
-                    contract.defaultAccount = playingAccount;
-
+                    contract.defaultAccount = web3.eth.defaultAccount = playingAccount;
+                    await updateConfig();
                     let user = await getUser();
 
-                    if (user.fromBlock.gt(user.toBlock)) return;
+                    if (user.fromBlock.gt(user.toBlock)) throw new Error("already in a bet");
 
-                    const betValue = new BN(value);
-
-                    if (betValue.lt(config.betMin) || betValue.gt(config.betMax)) return;
+                    const betValue = new BN(web3.utils.toWei(String(value)));
+                    console.log(betValue.toString());
+                    if (betValue.lt(currentConfig.betMin) || betValue.gt(currentConfig.betMax)) throw new Error("bet must be higher than 1 matic and lower than a lot");
 
                     currentAuth = generatePassword(8);
                     // todo: generate password instead of emptyPassword
-                    if (user.balance.gte(betValue)) await contract.methods.createBet(await sha1(currentAuth), betValue.toString(), emptyPassword).send();
-                    else await contract.methods.createBet(await sha1(currentAuth), betValue.toString(), emptyPassword).send({ value: betValue.sub(user.balance).toString() });
+                    if (user.balance.gte(betValue)) await contract.methods.createBet(await sha1(currentAuth), betValue.toString(), emptyPassword).send(fromPlayingAccount());
+                    else await contract.methods.createBet(await sha1(currentAuth), betValue.toString(), emptyPassword).send({ from: playingAccount, value: betValue.sub(user.balance).toString() });
 
                     user = await getUser(); //user.betId is updated here after await contract...
                     const betId = user.betId;
                     const fromBlock = user.fromBlock;
                     eventSubscription = contract.events.allEvents({ fromBlock: fromBlock, filter: { betId: betId } }, handleEvent);
                 } catch (e) {
-                    playingAccount = contract.defaultAccount = null;
+                    playingAccount = null;
                     elCreateBetButton.disabled = elJoinBetButton.disabled = false;
                     elStateText.innerHTML = "Failed to create bet";
                     updateActivateButton();
@@ -240,32 +261,31 @@
 
                 try {
                     playingAccount = currentAccount; //maybe put this last aka if everything succeeded
-                    contract.defaultAccount = playingAccount;
-
+                    await updateConfig();
                     const user = await getUser();
-
-                    if (user.fromBlock.gt(user.toBlock)) return; // todo: already in a match, init with user.betId
+                    if (user.fromBlock.gt(user.toBlock))  throw new Error("already in bet"); // todo: already in a match, init with user.betId
                     const bet = await getBet(betId);
                     const bcTimestamp = (await web3.eth.getBlock('latest')).timestamp;
-                    if (bcTimestamp > bet.timestamp + (await getConfig()).expireTime) return; //is expired
+                    if (bcTimestamp > bet.timestamp + (currentConfig.expireTime)) throw new Error("bet expired"); //is expired
 
                     // todo: check if the password is correct first
                     let sendAmount = user.balance.gte(bet.balance) ? BN_ZERO : bet.balance.sub(user.balance);
                     let receipt;
 
                     currentAuth = generatePassword(8);
-                    if (sendAmount.gt(BN_ZERO)) receipt = await contract.methods.joinBet(await sha1(currentAuth), betId, emptyPassword).send({ value: sendAmount.toString() });
-                    else receipt = await contract.methods.joinBet(await sha1(currentAuth), betId, emptyPassword).send();
+                    if (sendAmount.gt(BN_ZERO)) receipt = await contract.methods.joinBet(await sha1(currentAuth), betId, emptyPassword).send({ from: playingAccount, value: sendAmount.toString() });
+                    else receipt = await contract.methods.joinBet(await sha1(currentAuth), betId, emptyPassword).send(fromPlayingAccount());
 
                     eventSubscription = contract.events.allEvents({ fromBlock: receipt.blockNumber, filter: { betId: betId } }, handleEvent);
+
+                    elStateText.innerHTML = "Bet joined";
                 } catch (e) {
                     elCreateBetButton.disabled = elJoinBetButton.disabled = false;
-                    playingAccount = contract.defaultAccount = null;
+                    playingAccount = null;
                     elStateText.innerHTML = "Failed to join bet";
                     updateActivateButton();
                     console.log(e);
                 }
-                elStateText.innerHTML = "Bet joined";
             });
 
             elPlayerRollButton.addEventListener('click', async () => {
@@ -323,9 +343,9 @@
             return events;
         };
 
-        const getConfig = async () => {
-            let data = await contract.methods.getConfig().call();
-            return {
+        const updateConfig = async () => {
+            let data = await contract.methods.getConfig().call(fromPlayingAccount());
+            currentConfig = {
                 betMax: new BN(data[0]),
                 betMin: new BN(data[1]),
                 confirmTime: new BN(data[2]),
@@ -333,8 +353,8 @@
             };
         }
 
-        const getUser = async (addr) => {
-            const data = await contract.methods.getUser(addr).call();
+        const getUser = async () => {
+            const data = await contract.methods.getUser().call(fromPlayingAccount());
             return {
                 balance: new BN(data[0]),
                 betId: data[1],
@@ -344,7 +364,7 @@
         }
 
         const getBet = async (betId) => {
-            const data = await contract.methods.getBet(betId).call();
+            const data = await contract.methods.getBet(betId).call(fromPlayingAccount());
             return {
                 isConfirmed: data[0],
                 addr1: data[1],
@@ -397,7 +417,7 @@
                     elPlayerRollButton.innerHTML = isMyTurn ? `Roll 0-${ceil}` : 'Waiting';
                     elOpponentRollButton.innerHTML = isMyTurn ? 'Waiting' : `Roll 0-${ceil}`;
                     elPlayerRollButton.disabled = !isMyTurn;
-
+                    console.log("hi");
                     elStateText.innerHTML = isMyTurn ? "Your turn" : "";
 
                     if (!isMyTurn) forceTurnTimeout = setTimeout(() => {
@@ -451,13 +471,13 @@
                     const isMyWin = e.returnValues.winner === playingAccount;
                     //todo: we know if it was expired resolve coinflip if we compare e.timestamp here to e.timestamp from BetConfirm
                     elStateText.innerHTML = isMyWin ? "You win!" : "You lose";
-                    playingAccount = null;
+                    playingAccount = currentToken = null;
                     await eventSubscription.unsubscribe();
                     break;
                 case 'BetCancel':
                     if (forceTurnTimeout && !forceTurnTimeout.cleared) clearTimeout(forceTurnTimeout);
                     elStateText.innerHTML = "Bet canceled";
-                    playingAccount = null;
+                    playingAccount = currentToken = null;
                     await eventSubscription.unsubscribe();
                     break;
             }
@@ -518,7 +538,7 @@
             onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode === 44 || event.charCode === 46" style="width: 342px;"></div>
     <div style="display: flex; justify-content: center;"><button class="tmp-ui" id="join-bet-button"  type="submit" style="width: 68px;" disabled>join</button><label
             for="join-bet-id"> id:</label><input id="join-bet-id" onkeypress="return event.charCode >= 48 && event.charCode <= 57" style="width: 352px;"></div>
-    <button class="tmp-ui" id="activate-button" style="margin: 16px auto 16px auto; width: 120px;" disabled>activate</button>
+    <button class="tmp-ui" id="activate-button" style="margin: 16px auto 16px auto; width: 120px;" disabled>activate</button><button class="tmp-ui" id="cancel-button" style="margin: 16px auto 16px auto; width: 120px;">cancel</button>
     <p id="address-text" style="margin: 0; font-family: 'Times New Roman', Times, serif; font-size: 22px; text-align: center;">0x0</p>
 </div>
 </body>

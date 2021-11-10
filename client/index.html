@@ -168,15 +168,13 @@
                     if (currentChainId !== polygonMumbaiChainId) await ethereum.request({ method: 'wallet_switchEthereumChain', params:[{chainId: web3.utils.numberToHex(polygonMumbaiChainId)}]});
                     playingAccount = currentAccount;
                     elAddressText.innerText = currentAccount;
-                    user = await getUser();
-                    await updateConfig();
-                    console.log(user.betId);
+                    [ user ] = await Promise.all([getUser(), updateConfig()]);
                 } catch (e) {
                     elStateText.innerHTML = "Please connect your mumbai address";
                     //user canceled or doesn't have metamask/web3
                 }
             }
-
+            console.log(toString(user));
             window.ethereum.on('accountsChanged', function (accounts) {
                 currentAccount = accounts[0];
                 elAddressText.innerText = currentAccount;
@@ -359,8 +357,20 @@
                 balance: new BN(data[0]),
                 betId: data[1],
                 fromBlock: new BN(data[2]),
-                toBlock: new BN(data[3]),
+                toBlock: new BN(data[3])
             };
+        }
+
+        function objectMap(object, mapFn) {
+            return Object.keys(object).reduce(function(result, key) {
+                result[key] = mapFn(object[key])
+                return result
+            }, {})
+        }
+
+        const toString = (obj) => {
+            return JSON.stringify(objectMap(obj, (p) => {
+                return p instanceof String ? p : p.toString(); }));
         }
 
         const getBet = async (betId) => {

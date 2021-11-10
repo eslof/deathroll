@@ -1,8 +1,0 @@
-{
-  "name": "lambda",
-  "version": "1.0.0",
-  "dependencies": {
-    "aws-sdk": "^2.1013.0",
-    "web3": "^1.6.0"
-  }
-}

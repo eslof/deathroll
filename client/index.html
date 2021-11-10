@@ -424,8 +424,8 @@
                     isAddr1Begin = e.returnValues.isAddr1Begin;
 
                     isMyTurn = isAddr1 ? isAddr1Begin : !isAddr1Begin;
-                    elPlayerRollButton.innerHTML = isMyTurn ? `Roll 0-${ceil}` : 'Waiting';
-                    elOpponentRollButton.innerHTML = isMyTurn ? 'Waiting' : `Roll 0-${ceil}`;
+                    elPlayerRollButton.innerHTML = isMyTurn ? `Roll 0-${currentCeil}` : 'Waiting';
+                    elOpponentRollButton.innerHTML = isMyTurn ? 'Waiting' : `Roll 0-${currentCeil}`;
                     elPlayerRollButton.disabled = !isMyTurn;
                     console.log("hi");
                     elStateText.innerHTML = isMyTurn ? "Your turn" : "";

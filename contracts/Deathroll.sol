@@ -113,6 +113,7 @@ contract Deathroll is Config {
     function _addUserBalance(uint value) private { _addUserBalance(msg.sender, value); }
 
     function _cancelBet(uint betId) private {
+        require(_betById[betId].addr1 != address(0), ERROR_BET_MISSING);
         if (_betById[betId].addr2 == address(0)) _cancelEmptyBet(betId);
         else _cancelUnconfirmedBet(betId);
     }

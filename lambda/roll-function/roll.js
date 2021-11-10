@@ -27,12 +27,8 @@ module.exports = async (addr, user, bet, isForceMove) => {
 
     let result = await getRoll(betRow.ceil);
     if (result === 0) {
-        await Promise.all([
-            new Promise(resolve => { // todo: test this
-                layer.contract.methods.completeBet(betId, !isAddr1Turn).send().on('sent', resolve)
-            }),
-            layer.deleteBetRow(betId).promise()
-        ]);
+        let resp = await layer.contract.methods.completeBet(betId, !isAddr1Turn).send();
+        await layer.deleteBetRow(betId);
         return;
     }
     await Promise.all([

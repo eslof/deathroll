@@ -186,7 +186,7 @@ contract Deathroll is Config {
     // Private views
 
     function _coinFlip() private view returns (bool) {
-        return uint8(uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty, block.number)))) % 256 > 127;
+        return uint8(uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty, block.number)))) > 127;
     }
 
     function _isBetOngoing() private view returns (bool) {

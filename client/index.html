@@ -368,6 +368,7 @@
             }, {})
         }
 
+        //for getUser/getBet/getConfig functions with BN.js values
         const toString = (obj) => {
             return JSON.stringify(objectMap(obj, (p) => {
                 return p instanceof String ? p : p.toString(); }));

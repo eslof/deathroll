@@ -1,27 +1,10 @@
 <html>
 <head>
-<style>
-    body {background-color: #141414; color: white; font-family: 'Bangers', cursive; font-size: 22px; margin: 0; }
-    .logo { display:inline-block; font-size: 72px; text-align: center; }
-    button { padding: 3px 6px 3px 6px; font-size: 22px; font-family: 'Bangers', cursive; text-shadow: 2px 2px #000000; color: white; background-color: dimgrey; }
-    p { font-size: 32px; margin: 6px 0 6px 0; text-shadow: 2px 2px #000000; }
-    form { margin: 0 0 16px 0; }
-    input { height: 28px; text-align: right; }
-    button:disabled,
-    button[disabled]{
-        opacity: 66%;
-        color: lightgrey;
-    }
-    button.tmp-ui {
-        border-color: lightgreen;
-        background-color: limegreen;
-    }
-    button.tmp-ui:disabled,
-    button.tmp-ui[disabled]{
-        border-color: dimgray;
-        background-color: darkgray;
-    }
-</style>
+	<style>
+		
+		
+	
+	</style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet">
@@ -539,18 +522,47 @@
     </script>
 </head>
 <body>
-<div style="height: 100%; width: 1080px; margin:0 auto; display: flex; flex-direction: column; flex-wrap: wrap; background-image: url('img/bg.png'); background-position: bottom;">
-    <div class="logo" style="margin-top: 16px;"><img src="img/logo.png"/></div>
-    <div id="roll-text-div" style="display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; flex-basis: 20px; flex-shrink: 1; flex-grow: 1; width: 100%; text-align: center; margin: 0px 0px 16px 0px;"></div>
-    <div style="margin: 16px 0px 16px 0px;"><p id="state-text" style="width: 100%; text-align: center; margin: 0px;">Your turn!</p></div>
-    <div style="margin: 16px 0 16px 0; display: flex; justify-content: center;"><button id="player-roll-button" style="padding: 6px 12px 6px 12px; background-color: #6991de; border-color: lightblue; color: white; width: 112px; margin-right: 16px;" disabled>Waiting</button><button id="opponent-roll-button" style="margin-left: 16px; padding: 6px 12px 6px 12px; background-color: #c722b8; border-color: pink; width: 112px;" disabled>Waiting</button></div>
-    <div style="display: flex; justify-content: center;"><button class="tmp-ui" id="create-bet-button" type="submit" style="width: 68px;" disabled>create</button><label
-            for="create-bet-amount"> bet:</label><input id="create-bet-amount" type="number" min="0.1" step="0.1"
-            onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode === 44 || event.charCode === 46" style="width: 342px;"></div>
-    <div style="display: flex; justify-content: center;"><button class="tmp-ui" id="join-bet-button"  type="submit" style="width: 68px;" disabled>join</button><label
-            for="join-bet-id"> id:</label><input id="join-bet-id" onkeypress="return event.charCode >= 48 && event.charCode <= 57" style="width: 352px;"></div>
-    <button class="tmp-ui" id="activate-button" style="margin: 16px auto 16px auto; width: 120px;" disabled>activate</button><button class="tmp-ui" id="cancel-button" style="margin: 16px auto 16px auto; width: 120px;">cancel</button>
-    <p id="address-text" style="margin: 0; font-family: 'Times New Roman', Times, serif; font-size: 22px; text-align: center;">0x0</p>
+	
+<div>
+    <div class="logo"><img src="img/logo.png"/></div>
+    <div id="roll-text-div"></div>
+    <div>
+		<p id="state-text">Your turn!</p>
+	</div>
+    <div>
+		<button id="player-roll-button" disabled>
+			Waiting
+		</button>
+		<button id="opponent-roll-button" disabled>
+			Waiting
+		</button>
+	</div>
+    <div>
+		<button class="tmp-ui" id="create-bet-button" type="submit" disabled>
+			create
+		</button>
+		<label for="create-bet-amount">
+			bet:
+		</label>
+		<input id="create-bet-amount" type="number" min="0.1" step="0.1" onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode === 44 || event.charCode === 46" style="width: 342px;">
+	</div>
+    <div>
+		<button class="tmp-ui" id="join-bet-button"  type="submit" disabled>
+			join
+		</button>
+		<label for="join-bet-id">id:</label>
+		<input id="join-bet-id" onkeypress="return event.charCode >= 48 && event.charCode <= 57">
+	</div>
+    <button class="tmp-ui" id="activate-button" disabled>
+		activate
+	</button>
+	<button class="tmp-ui" id="cancel-button">
+		cancel
+	</button>
+    <p id="address-text">
+		0x0
+	</p>
 </div>
+
 </body>
 </html>

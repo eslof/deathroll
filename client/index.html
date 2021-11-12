@@ -1,8 +1,91 @@
 <html>
 <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 	<style>
 		
+	    @font-face {
+	    font-family: 'RoadRage';
+	    font-style: normal;
+	    font-weight: normal;
+	    src: local('RoadRage'), url('fonts/road-rage-cufonfonts-webfont/Road_Rage.woff') format('woff');
+	    }
 		
+		
+		body{
+			color:white;
+			background-color:black;
+			font-family: "Century Gothic", CenturyGothic, AppleGothic, sans-serif;
+			letter-spacing: 1px;
+			line-height:28px;
+		}
+		
+		input{
+			font-family: "Century Gothic", CenturyGothic, AppleGothic, sans-serif;
+			letter-spacing: 1px;
+			border:none;
+			padding:10px;
+		    border-radius: 3px;
+			
+		}
+		
+		.page{
+			width:600px;
+			text-align:center;
+			margin:340px auto;
+		}
+		
+		h2{
+			font-family:'RoadRage';
+			color:#fef000;
+			font-size: 20px;
+  		 	text-shadow: 2px 2px #000000;
+			
+		}
+		
+
+		button{
+			font-family:'RoadRage';
+			color:#fef000;
+			background-color:#2f2f2f;
+			font-size: 20px;
+			padding: 10px 25px;
+		    border-radius: 10px;
+			border-width:1px;
+  		  margin:0 5px;
+		  text-shadow: 2px 2px #000000;
+		  background-image: linear-gradient(#515151, #2f2f30);
+		  border:none;
+		  cursor:pointer;
+		}
+		
+		button:hover {
+		  background-color: yellow;
+		  color:black;
+		  text-shadow: none;
+		  background-image: linear-gradient(#fef000, #fef000);
+		  
+		}
+		
+		button:disabled {
+		  color: #585858;
+		  text-shadow: 2px 2px #000000;
+		  background-image: linear-gradient(#515151, #2f2f30);
+		  cursor:default;
+		  
+		}
+		
+		.logo{
+			width:1200px;
+			position:absolute;
+			top:0;
+			left:50%;
+			z-index:-1;
+			margin-left:-600px;
+		}
+		
+		.row{
+			margin-top:15px;
+		}
 	
 	</style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -521,47 +604,57 @@
 
     </script>
 </head>
-<body>
-	
+<body>	
 <div>
-    <div class="logo"><img src="img/logo.png"/></div>
-    <div id="roll-text-div"></div>
-    <div>
-		<p id="state-text">Your turn!</p>
+    <div><img src="img/deathroll-logo.jpg" class="logo"/></div>
+	<div class="page">
+		<div>
+			<h2>Instructions</h2>
+			<p>This is a game whereby people in a group or in a guild roll starting from 9999 to 1, first person to reach 1 lost. The last roll becomes the new upper limit of the roll.</p>
+		</div>
+		<div>
+			<h2>Play!</h2>
+		</div>
+	    <div id="roll-text-div"></div>
+	    <div>
+			<p id="state-text">Your turn!</p>
+		</div>
+	    <div class="row">
+			<button id="player-roll-button" disabled>
+				Waiting
+			</button>
+			<button id="opponent-roll-button" disabled>
+				Waiting
+			</button>
+		</div>
+	    <div class="row">
+			<button class="tmp-ui" id="create-bet-button" type="submit" disabled>
+				create
+			</button>
+			<label for="create-bet-amount">
+				bet:
+			</label>
+			<input id="create-bet-amount" type="number" min="0.1" step="0.1" onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode === 44 || event.charCode === 46" style="width: 342px;">
+		</div>
+	    <div class="row">
+			<button class="tmp-ui" id="join-bet-button"  type="submit" disabled>
+				join
+			</button>
+			<label for="join-bet-id">id:</label>
+			<input id="join-bet-id" onkeypress="return event.charCode >= 48 && event.charCode <= 57">
+		</div>
+		<div class="row">
+		    <button class="tmp-ui" id="activate-button" disabled>
+				activate
+			</button>
+			<button class="tmp-ui" id="cancel-button">
+				cancel
+			</button>
+		</div>
+	    <p id="address-text">
+			0x0
+		</p>
 	</div>
-    <div>
-		<button id="player-roll-button" disabled>
-			Waiting
-		</button>
-		<button id="opponent-roll-button" disabled>
-			Waiting
-		</button>
-	</div>
-    <div>
-		<button class="tmp-ui" id="create-bet-button" type="submit" disabled>
-			create
-		</button>
-		<label for="create-bet-amount">
-			bet:
-		</label>
-		<input id="create-bet-amount" type="number" min="0.1" step="0.1" onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode === 44 || event.charCode === 46" style="width: 342px;">
-	</div>
-    <div>
-		<button class="tmp-ui" id="join-bet-button"  type="submit" disabled>
-			join
-		</button>
-		<label for="join-bet-id">id:</label>
-		<input id="join-bet-id" onkeypress="return event.charCode >= 48 && event.charCode <= 57">
-	</div>
-    <button class="tmp-ui" id="activate-button" disabled>
-		activate
-	</button>
-	<button class="tmp-ui" id="cancel-button">
-		cancel
-	</button>
-    <p id="address-text">
-		0x0
-	</p>
 </div>
 
 </body>

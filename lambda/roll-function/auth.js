@@ -1,8 +1,12 @@
 const layer = require('/opt/base-layer');
 const emptyAddr = '0x0000000000000000000000000000000000000000';
 const jwt = layer.jwt;
+const web3 = layer.web3;
+//const BN = layer.BN;
 const GameException = layer.GameException;
 const AUTH_LENGTH = 8;
+const AUTH_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+const AUTH_CHAR_LEN = AUTH_CHARS.length;
 
 const getUserBetExpire = async (addr) => {
     const user = await layer.getUser(addr);
@@ -10,24 +14,28 @@ const getUserBetExpire = async (addr) => {
 
     const [ config, latestBlock, bet ] = await Promise.all([
         layer.getConfig(),
-        layer.web3.eth.getBlock('latest'),
+        web3.eth.getBlock('latest'),
         layer.getBet(user.betId)
     ]);
-
-    if (bet.addr2 === emptyAddr) throw new GameException("Bet pending.");
-    const expireSeconds = config.expireTime - (latestBlock.timestamp - bet.timestamp);
-    if (expireSeconds <= 0) throw new GameException("Bet expired.");
     const ocTimestamp = Math.floor(Date.now() / 1000);
-    return [user, bet, config, ocTimestamp - latestBlock.timestamp, expireSeconds];
+    const bcTimestamp = Number(latestBlock.timestamp);
+    if (bet.addr2 === emptyAddr) throw new GameException("Bet pending.");
+    const expireSeconds = getExpireSeconds(bet, config, bcTimestamp);
+    if (expireSeconds <= 0) throw new GameException("Bet expired.");
+
+    return [user, bet, config, ocTimestamp - bcTimestamp, expireSeconds];
 };
 
 const generateAuth = () => {
-    let randomChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    return Array.from(Array(AUTH_LENGTH), () => randomChars.charAt(Math.floor(Math.random() * randomChars.length))).join('');
+    return Array.from(Array(AUTH_LENGTH), () => AUTH_CHARS.charAt(Math.floor(Math.random() * AUTH_CHAR_LEN))).join('');
 };
+
+const getRowExpire = (bet, config, delta) => bet.timestamp + config.expireTime + delta;
+const getExpireSeconds = (bet, config, bcTimestamp) => bcTimestamp - bet.timestamp . config.expireTime;
 
 module.exports = async (event) => {
     const eventLength = Object.keys(event).length;
+
     if ('token' in event) {
         if (eventLength !== 2) throw new GameException("Unexpected request length:" + JSON.stringify(event));
 
@@ -59,7 +67,8 @@ module.exports = async (event) => {
     const [ user, bet, config, bcDeltaTime, expireSeconds ] = await getUserBetExpire(event.addr);
 
     if ('msg' in event) {
-        if (eventLength !== 3) throw new GameException("Unexpected request length:" + JSON.stringify(event));
+        if (!('i' in event)) throw new GameException("Missing transaction index.");
+        if (eventLength !== 4) throw new GameException("Unexpected request length:" + JSON.stringify(event));
 
         let authRow;
         try {
@@ -72,22 +81,15 @@ module.exports = async (event) => {
         if ('betId' in authRow && authRow.betId === user.betId)
             throw new GameException("Token already given for message.");
 
-        const block = await layer.web3.eth.getBlock(user.fromBlock, true);
-        const txInputs = block.transactions.filter(
-            t => t.from === event.addr && t.to === layer.contractAddress
-        ).map(t => t.input);
-        const txCount = txInputs.length;
+        const txInput = (await web3.eth.getTransactionFromBlock(user.fromBlock, event.i)).input;
         const sha1Claim = await layer.sha1(event.msg);
-        let isMatch = false;
-        for (let i = 0; i < txCount; i++) {
-            try {
-                const sha1Auth = layer.web3.eth.abi.decodeParameter(['bytes20'], txInputs[i])[0];
-                if (sha1Claim === sha1Auth) isMatch = true;
-            } catch (e) { }
-        }
-        if (!isMatch) throw new GameException("Unable to find matching transaction.");
-        const token = jwt.sign({ addr: event.addr, betId: user.betId }, layer.JWT_SECRET, { expiresIn: expireSeconds });
-        await layer.setAuthRow(event.addr, user.betId, token, (bet.timestamp + config.expireTime) + bcDeltaTime);
+        const sha1Auth = web3.eth.abi.decodeParameter('bytes20', txInput);
+        if (sha1Claim !== sha1Auth) throw new GameException("Unable to find matching transaction.");
+
+        const expiresIn = expireSeconds + bcDeltaTime;
+        const expireTimestamp = getRowExpire(bet, config, bcDeltaTime);
+        const token = jwt.sign({ addr: event.addr, betId: user.betId }, layer.JWT_SECRET, { expiresIn: expiresIn });
+        await layer.setAuthRow(event.addr, user.betId, token, expireTimestamp);
         return [null, event.addr, user, bet, config, bcDeltaTime, token];
     }
 
@@ -102,7 +104,7 @@ module.exports = async (event) => {
             throw new GameException("No signature expected.");
         }
         //todo: check if there's an existing matching token instead of making a new one?
-        //todo: include match id in message to verify
+        //todo: include match id in message to verify?
         if (!('msg' in authRow)) throw new GameException("No signature expected.");
 
         const msgBufferHex = layer.bufferToHex(Buffer.from(authRow.msg, 'utf8'));
@@ -112,9 +114,10 @@ module.exports = async (event) => {
         }).toLowerCase();
 
         if (address !== event.addr) throw new GameException("Given address to signature mismatch.");
-
-        const token = jwt.sign({addr: event.addr, betId: user.betId}, layer.JWT_SECRET, { expiresIn: expireSeconds });
-        await layer.setAuthRow(event.addr, user.betId, token, (bet.timestamp + config.expireTime) + bcDeltaTime);
+        const expiresIn = expireSeconds + bcDeltaTime;
+        const expireTimestamp = getRowExpire(bet, config, bcDeltaTime);
+        const token = jwt.sign({addr: event.addr, betId: user.betId.toString() }, layer.JWT_SECRET, { expiresIn: expiresIn });
+        await layer.setAuthRow(event.addr, user.betId, token, expireTimestamp);
         return [null, event.addr, user, bet, config, bcDeltaTime, token];
     }
 
@@ -122,6 +125,7 @@ module.exports = async (event) => {
 
     if (layer.isAuthCooldown(event.addr)) throw new GameException("Auth msg requests once per 10 seconds.");
     const authMsg = generateAuth();
-    await layer.setAuthMsg(event.addr, authMsg, (bet.timestamp + config.expireTime) + bcDeltaTime);
+    const expireTimestamp = getRowExpire(bet, config, bcDeltaTime);
+    await layer.setAuthMsg(event.addr, authMsg, expireTimestamp);
     return [authMsg, null, null, null, null, null, null]; // todo: use in-memory db for this also?
 };

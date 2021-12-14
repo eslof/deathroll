@@ -34,7 +34,7 @@ module.exports = async (addr, user, bet, isForceMove) => {
     await Promise.all([
         layer.updateBetRow(betId, result, ocTimestamp),
         new Promise(resolve => {
-            layer.contract.methods.completeRoll(betId, result).send().on('sent', resolve);
+            layer.contract.methods.completeRoll(betId, result).send().on('error', reject).on('sent', resolve);
         })
     ]);
 };

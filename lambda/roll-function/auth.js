@@ -8,7 +8,7 @@ const AUTH_LENGTH = 8;
 const AUTH_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 const AUTH_CHAR_LEN = AUTH_CHARS.length;
 
-const getUserBetExpire = async (addr) => {
+const getBlockchainData = async (addr) => {
     const user = await layer.getUser(addr);
     if (user.fromBlock.lte(user.toBlock)) throw new GameException("Bet missing.");
 
@@ -57,14 +57,14 @@ module.exports = async (event) => {
 
         if (!('token' in authRow) || event.token !== authRow.token) throw new GameException("Invalid token.");
 
-        const [user, bet, config, bcDeltaTime] = await getUserBetExpire(addr);
+        const [user, bet, config, bcDeltaTime] = await getBlockchainData(addr);
         if (user.betId !== betId) throw new GameException("Token not valid for current bet.")
 
         return [null, addr, user, bet, config, bcDeltaTime, null];
     }
 
     if (!('addr' in event)) throw new GameException("No addr.");
-    const [ user, bet, config, bcDeltaTime, expireSeconds ] = await getUserBetExpire(event.addr);
+    const [ user, bet, config, bcDeltaTime, expireSeconds ] = await getBlockchainData(event.addr);
 
     if ('msg' in event) {
         if (!('i' in event)) throw new GameException("Missing transaction index.");
